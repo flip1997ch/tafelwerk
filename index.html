@@ -83,6 +83,19 @@ textarea.inp{min-height:120px;resize:vertical;line-height:1.5}
 @container (max-height:330px){.vt .chips{display:none}.vt{grid-template-rows:1fr auto}}
 @container (max-height:200px){.laps{display:none}}
 
+/* Aprilscherz */
+#app.flip-in{animation:flipIn 1.1s cubic-bezier(.5,-.35,.25,1.25) forwards}
+#app.flip-out{animation:flipOut .9s cubic-bezier(.5,-.3,.3,1.2) forwards}
+@keyframes flipIn{0%{transform:rotate(0)}12%{transform:rotate(-7deg)}100%{transform:rotate(180deg)}}
+@keyframes flipOut{from{transform:rotate(180deg)}to{transform:rotate(360deg)}}
+.flip-shield{position:fixed;inset:0;z-index:150000;cursor:pointer}
+.apr-host{position:fixed;inset:0;z-index:160000;display:grid;place-items:center;pointer-events:none}
+.apr-card{display:grid;justify-items:center;gap:6px;padding:28px 44px;border-radius:24px;background:#eaf7ff;color:#0f2f48;box-shadow:0 24px 60px rgba(0,0,0,.3);animation:pop .6s cubic-bezier(.2,1.6,.4,1)}
+.apr-card b{font-size:clamp(32px,6vw,72px);line-height:1}
+.apr-fish{font-size:clamp(48px,9vw,110px);line-height:1;animation:swim 1.2s ease-in-out infinite alternate}
+@keyframes swim{from{transform:translateX(-14px) rotate(-6deg)}to{transform:translateX(14px) rotate(6deg)}}
+.apr-card.out{transition:opacity .35s,transform .35s;opacity:0;transform:scale(.85)}
+
 /* Einrasten */
 #guides{position:absolute;inset:0;pointer-events:none;z-index:99990}
 .gd{position:absolute;background:#e5197a;box-shadow:0 0 0 1px rgba(255,255,255,.7)}
@@ -3042,7 +3055,9 @@ def('randomizer',{label:'Zufallsname',icon:'shuffle',cat:'klasse',
     const root=h('div',{class:'rd'},stage,done,h('div',{class:'ctl'},go,rs));I.body.append(root);
     function drawDone(){done.replaceChildren(...(d.noRepeat?d.drawn:[]).map(n=>h('span',null,n)))}
     let busy=false,raf=0,anim=null;
-    const finish=pick=>{busy=false;d.cur=pick;if(d.noRepeat&&!d.drawn.includes(pick))d.drawn.push(pick);drawDone();save();if(d.snd)tada(d.vol);confetti(I.body)};
+    const finish=pick=>{if(pick===teacherPick()){/* Aprilscherz-Ziehung: nichts speichern, kurz zeigen, dann auflösen */if(d.snd)tada(d.vol);confetti(I.body);
+        setTimeout(()=>{stage.replaceChildren(h('div',{class:'rd-name rd-msg pop'},'April, April! 🐟'));setTimeout(()=>{busy=false;view.reset()},2400)},2200);return}
+      busy=false;d.cur=pick;if(d.noRepeat&&!d.drawn.includes(pick))d.drawn.push(pick);drawDone();save();if(d.snd)tada(d.vol);confetti(I.body)};
     const msg=t=>{stage.replaceChildren(h('div',{class:'rd-name rd-msg'},t))};
     /* --- Schnell (wie bisher) --- */
     const quick={reset(){stage.replaceChildren(h('div',{class:'rd-name'},d.cur||'Wer ist dran?'))},
@@ -3068,7 +3083,7 @@ def('randomizer',{label:'Zufallsname',icon:'shuffle',cat:'klasse',
         for(let k=0;k<n;k++){let col=WHEELC[k%WHEELC.length];if(k===n-1&&n%WHEELC.length===1&&n>1)col=WHEELC[1];g.beginPath();g.moveTo(c,c);g.arc(c,c,R,rot+k*a,rot+(k+1)*a);g.closePath();g.fillStyle=col;g.fill();g.strokeStyle='rgba(255,255,255,.85)';g.lineWidth=2;g.stroke();
           const t=segs[k]||'';g.save();g.translate(c,c);g.rotate(rot+(k+.5)*a);g.fillStyle='#fff';g.textAlign='right';g.textBaseline='middle';let fz=Math.min(R*.16,R*a*.55);g.font=`700 ${fz}px ${ff}`;while(g.measureText(t).width>R*.72&&fz>9){fz-=1;g.font=`700 ${fz}px ${ff}`}g.fillText(t,R-12,1);g.restore()}
         g.beginPath();g.arc(c,c,R,0,7);g.lineWidth=5;g.strokeStyle='#1a2230';g.stroke();g.beginPath();g.arc(c,c,R*.12,0,7);g.fillStyle='#fff';g.fill();g.lineWidth=4;g.stroke()},
-      run(pick){const ban=stage.querySelector('.rd-banner');if(ban)ban.hidden=true;segs=pool();const k=segs.indexOf(pick),n=segs.length,a=2*Math.PI/n;wheel.draw();
+      run(pick){const ban=stage.querySelector('.rd-banner');if(ban)ban.hidden=true;segs=pool();if(!segs.includes(pick))segs.splice(Math.floor(Math.random()*(segs.length+1)),0,pick);const k=segs.indexOf(pick),n=segs.length,a=2*Math.PI/n;wheel.draw();
         const jitter=(Math.random()-.5)*a*.6;let target=-Math.PI/2-(k+.5)*a+jitter;const turns=REDUCED()?0:5+Math.floor(Math.random()*3);while(target<rot)target+=2*Math.PI;target+=turns*2*Math.PI;
         const r0=rot,dur=REDUCED()?300:4200+Math.random()*1200,t0=performance.now();let lastSeg=null;
         const ease=t=>1-Math.pow(1-t,4);const seg=()=>{let x=((-Math.PI/2-rot)%(2*Math.PI)+2*Math.PI)%(2*Math.PI);return Math.floor(x/a)};
@@ -3076,7 +3091,8 @@ def('randomizer',{label:'Zufallsname',icon:'shuffle',cat:'klasse',
           if(t<1)raf=requestAnimationFrame(step);else{rot%=2*Math.PI;const b=stage.querySelector('.rd-banner');if(b){b.textContent=pick;b.hidden=false;b.classList.remove('pop');void b.offsetWidth;b.classList.add('pop')}finish(pick)}};raf=requestAnimationFrame(step)}};
     const view=d.anim==='wheel'?wheel:d.anim==='quick'?quick:slot;
     go.addEventListener('click',()=>{if(busy)return;const all=names();const pl=pool();if(!all.length){msg('Keine Namen vorhanden');return}if(!pl.length){msg('Alle gezogen. Zurücksetzen?');return}
-      ac();busy=true;const pick=pl[Math.floor(Math.random()*pl.length)];view.run(pick,all)});
+      ac();busy=true;const fy=new Date().getFullYear(),test=!!APP.foolNext,fool=test||(foolOn()&&isApr1()&&APP.P.aprilPick!==fy);
+      if(fool){APP.foolNext=false;if(!test){APP.P.aprilPick=fy;save()}}const pick=fool?teacherPick():pl[Math.floor(Math.random()*pl.length)];view.run(pick,all)});
     view.reset();drawDone();
     I.redraw=()=>{if(!busy){if(view===wheel)wheel.draw();else if(view===slot)slot.fit()}};
     const ro=new ResizeObserver(()=>requestAnimationFrame(()=>I.redraw()));ro.observe(stage);
@@ -3198,6 +3214,21 @@ const SIZES={timer:[320,310,170,170],visualtimer:[300,430,170,200],stopwatch:[32
   text:[380,200,160,100],draw:[600,420,260,200],image:[400,300,160,150],pdf:[560,460,240,200],video:[560,360,240,210],embed:[600,420,240,180],hyperlink:[300,170,170,140],qr:[260,320,150,170],webcam:[480,340,200,150],stickers:[180,180,100,100]};
 for(const[k,v]of Object.entries(SIZES))if(WIDGETS[k])Object.assign(WIDGETS[k],{w:v[0],h:v[1],minW:v[2],minH:v[3]});
 
+/* ============ Aprilscherz ============
+   1. April: Um 9 Uhr (bzw. beim ersten Öffnen bis 12 Uhr) steht die Tafel kopf, bis jemand antippt (max. 12 s).
+   Der erste Zufallsname des Tages ist die Lehrperson. Beides einmal pro Jahr und Profil. */
+const isApr1=()=>{const n=new Date();return n.getMonth()===3&&n.getDate()===1};
+const foolOn=()=>APP.P&&APP.P.april!==false;
+const teacherPick=()=>'🫵 '+((APP.P&&APP.P.teacherName||'').trim()||'Die Lehrperson')+'!';
+function aprilBanner(){const host=h('div',{class:'apr-host'});const card=h('div',{class:'apr-card'},h('div',{class:'apr-fish'},'🐟'),h('b',null,'April, April!'));host.append(card);document.body.append(host);
+  requestAnimationFrame(()=>confetti(host));tada(70);setTimeout(()=>{card.classList.add('out');setTimeout(()=>host.remove(),400)},3600)}
+function aprilFlip(test){if(APP.flipping||!APP.P)return;APP.flipping=true;if(!test){APP.P.aprilFlip=new Date().getFullYear();save()}
+  document.querySelector('.ov')?.remove();const app=$('#app');const shield=h('div',{class:'flip-shield','aria-label':'Antippen'});document.body.append(shield);
+  app.classList.remove('flip-out');app.classList.add('flip-in');let done=false;
+  const back=()=>{if(done)return;done=true;clearTimeout(t);shield.remove();app.classList.remove('flip-in');app.classList.add('flip-out');setTimeout(()=>{app.classList.remove('flip-out');APP.flipping=false;aprilBanner()},950)};
+  const t=setTimeout(back,12000);setTimeout(()=>shield.addEventListener('pointerdown',back),700)}
+setInterval(()=>{if(!APP.P||document.hidden||APP.flipping||!foolOn()||!isApr1())return;const n=new Date(),hr=n.getHours();if(hr>=9&&hr<12&&APP.P.aprilFlip!==n.getFullYear())aprilFlip(false)},10000);
+
 /* ============ Werkzeugleiste ============ */
 function buildDock(){const dk=$('#dock');dk.replaceChildren();const P=APP.P;
   const prof=APP.guest?null:APP.profiles.find(p=>p.id===APP.pid);
@@ -3228,8 +3259,8 @@ function openBackgrounds(){const P=APP.P;const grid=h('div',{class:'bgs'});let c
   draw();close=modal('Hintergrund',[grid,h('div',{class:'hint'},'Eigene Bilder werden verkleinert und nur in diesem Browser gespeichert. Keine Fotos von Kindern verwenden.')])}
 
 function openSettings(tab){let cur=tab||'klassen';const tabs=h('div',{class:'tabs',role:'tablist'});const pane=h('div');
-  const T=[['klassen','Klassen'],['screens','Bildschirme'],['toene','Klingeltöne'],['profil','Profil'],['daten','Datenschutz']];
-  function draw(){tabs.replaceChildren(...T.filter(([k])=>!(APP.guest&&k==='profil')).map(([k,l])=>h('button',{class:'tab'+(cur===k?' on':''),role:'tab','aria-selected':String(cur===k),onclick:()=>{cur=k;draw()}},l)));pane.replaceChildren(({klassen:paneClasses,screens:paneScreens,toene:paneTones,profil:paneProfile,daten:paneData})[cur](draw))}
+  const T=[['klassen','Klassen'],['screens','Bildschirme'],['toene','Klingeltöne'],['extras','Extras'],['profil','Profil'],['daten','Datenschutz']];
+  function draw(){tabs.replaceChildren(...T.filter(([k])=>!(APP.guest&&k==='profil')).map(([k,l])=>h('button',{class:'tab'+(cur===k?' on':''),role:'tab','aria-selected':String(cur===k),onclick:()=>{cur=k;draw()}},l)));pane.replaceChildren(({klassen:paneClasses,screens:paneScreens,toene:paneTones,extras:paneExtras,profil:paneProfile,daten:paneData})[cur](draw))}
   draw();modal('Einstellungen',[tabs,pane])}
 
 function paneClasses(redraw){const P=APP.P;let sel=P.activeClassId||(P.classes[0]&&P.classes[0].id)||'new';const wrap=h('div',{class:'split'});
@@ -3268,6 +3299,13 @@ function paneProfile(redraw){const prof=APP.profiles.find(p=>p.id===APP.pid);con
       h('div',{class:'note'},'Die PIN verhindert, dass Kinder am Whiteboard dein Profil öffnen. Sie ist ein Sichtschutz, keine Verschlüsselung: Wer Zugriff auf das Windows-Konto hat, kann die Daten technisch auslesen.')),
     h('div',{class:'field'},h('span',null,'Profil löschen'),h('div',{class:'row'},armed(h('button',{class:'btn danger'},'Profil mit allen Daten löschen'),'Endgültig löschen?',()=>{LS.del(K_P+prof.id);deleteProfileSounds(prof.id);APP.profiles=APP.profiles.filter(p=>p!==prof);saveProfiles();APP.pid=null;APP.P=null;document.querySelector('.ov')?.remove();clearBoard();showGate()}))))}
 
+function paneExtras(){const P=APP.P;
+  return h('div',{style:{display:'grid',gap:'18px',maxWidth:'680px'}},
+    h('div',{class:'prose'},h('h3',null,'🐟 Aprilscherz am 1. April'),h('p',null,'Um 9 Uhr steht die ganze Tafel plötzlich kopf. Antippen (oder 12 Sekunden warten) dreht sie zurück, dann erscheint «April, April!». Ist die Tafel um 9 Uhr noch nicht offen, passiert es beim ersten Öffnen bis 12 Uhr.'),h('p',null,'Beim ersten Zufallsnamen des Tages ist die Lehrperson dran. Danach wird ganz normal gezogen.')),
+    h('label',{class:'row'},h('input',{type:'checkbox',id:'apr-on',checked:P.april!==false,onchange:e=>{P.april=e.target.checked;save()},style:{width:'22px',height:'22px'}}),'Aprilscherz einschalten'),
+    h('label',{class:'field'},h('span',null,'So erscheint die Lehrperson beim Zufallsnamen'),h('input',{class:'inp',id:'apr-name',value:P.teacherName||'',placeholder:'Die Lehrperson',maxlength:30,oninput:e=>{P.teacherName=e.target.value;save()}})),
+    h('div',{class:'row'},h('button',{class:'btn',onclick:()=>setTimeout(()=>aprilFlip(true),250)},'🙃 Tafel umdrehen testen'),h('button',{class:'btn',onclick:()=>{APP.foolNext=true;toast('Beim nächsten Ziehen ist die Lehrperson dran (nur dieser Test).')}},'🫵 Nächste Ziehung testen')),
+    h('div',{class:'hint'},'Die Tests zählen nicht: Am 1. April passiert trotzdem alles wie geplant.'))}
 function paneTones(redraw){const P=APP.P;
   const def=soundSelect(P.defaultSound||'gong',v=>{P.defaultSound=v;save();preview(v)},false);
   const builtins=h('div',{class:'tones'},Object.entries(SOUNDS).map(([k,v])=>h('button',{class:'tone',onclick:()=>preview(k)},ic('play'),v.n)));
