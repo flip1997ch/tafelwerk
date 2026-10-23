@@ -133,7 +133,31 @@ textarea.inp{min-height:120px;resize:vertical;line-height:1.5}
 .clk svg{width:100%;height:100%}
 .clk-dig{font-weight:700;font-size:min(22cqw,46cqh);line-height:1}
 .clk-dig small{font-size:.45em;color:var(--muted)}
-.cal{position:absolute;inset:0;display:grid;place-content:center;justify-items:center;text-align:center;padding:10px;gap:2px}
+.cal{position:absolute;inset:0;display:grid;grid-template-rows:minmax(0,1fr) auto;overflow:hidden}
+.cal-main{position:relative;z-index:1;display:grid;place-content:center;justify-items:center;text-align:center;padding:10px;gap:2px;min-height:0}
+.cal.season{background:var(--s-bg);color:var(--s-fg)}
+.cal.season .wd{color:var(--s-acc)}
+.cal.season .kw{color:var(--s-fg);opacity:.75}
+.cal.season .dn{text-shadow:0 2px 0 rgba(0,0,0,.12)}
+.cal-rib{position:relative;z-index:1;padding:6px 10px;background:var(--s-acc);color:var(--s-rfg);font-weight:700;text-align:center;font-size:clamp(11px,min(5.4cqw,9cqh),24px);line-height:1.2;text-wrap:balance}
+.cal-ic{position:absolute;z-index:1;right:8px;top:4px;font-size:min(15cqw,20cqh);line-height:1;animation:wig 3s ease-in-out infinite;transform-origin:50% 90%}
+@keyframes wig{0%,100%{rotate:-6deg}50%{rotate:6deg}}
+.deco{position:absolute;inset:0;overflow:hidden;pointer-events:none;z-index:0}
+.deco .p{position:absolute;left:var(--x);top:var(--y);font-size:calc(min(7cqw,10cqh) * var(--s));line-height:1;opacity:.5}
+.deco-float .p,.deco-bob .p{opacity:.85}
+.cal.season .cal-main{text-shadow:0 0 14px var(--s-glow,transparent),0 0 3px var(--s-glow,transparent)}
+.deco-fall .p{top:-12%;animation:fallY var(--d) linear var(--dl) infinite,sway calc(var(--d) / 3) ease-in-out var(--dl) infinite alternate}
+@keyframes fallY{from{top:-12%}to{top:108%}}
+@keyframes sway{from{translate:calc(var(--sw) * -1) 0;rotate:-25deg}to{translate:var(--sw) 0;rotate:25deg}}
+.deco-float .p{animation:drift var(--d) linear var(--dl) infinite}
+@keyframes drift{0%{left:-15%;translate:0 0}25%{translate:0 -14px}50%{translate:0 10px}75%{translate:0 -10px}100%{left:110%;translate:0 0}}
+.deco-twinkle .p{animation:twk var(--d) ease-in-out var(--dl) infinite}
+@keyframes twk{0%,100%{opacity:.15;scale:.6}50%{opacity:1;scale:1.1}}
+.deco-bob .p{top:auto;bottom:-2%;translate:-50% 0;animation:bob var(--d) ease-in-out var(--dl) infinite alternate}
+@keyframes bob{from{bottom:-4%}to{bottom:4%}}
+.cal.season:has(.cal-rib:not([hidden])) .deco-bob .p{bottom:auto;top:58%;animation-name:bob2}
+@keyframes bob2{from{translate:-50% 0}to{translate:-50% -10px}}
+@media (prefers-reduced-motion:reduce){.deco-fall .p{top:var(--y)}.deco-float .p{left:var(--x)}}
 .cal .wd{font-size:min(11cqw,13cqh);font-weight:700;color:var(--zeit)}
 .cal .dn{font-size:min(36cqw,44cqh);font-weight:700;line-height:1}
 .cal .my{font-size:min(8cqw,10cqh)}
@@ -2878,9 +2902,65 @@ def('clock',{label:'Uhr',icon:'clock',cat:'zeit',w:300,h:300,minW:180,minH:180,
       const wrap=h('div',{class:'clk'});wrap.innerHTML=s;I.body.append(wrap);const H=wrap.querySelector('.hh'),M=wrap.querySelector('.mm'),S=wrap.querySelector('.ss');S.style.display=d.sec?'':'none';
       const u=()=>{const n=new Date(),sec=n.getSeconds(),m=n.getMinutes()+sec/60,hr=(n.getHours()%12)+m/60;H.setAttribute('transform',`rotate(${hr*30} 100 100)`);M.setAttribute('transform',`rotate(${m*6} 100 100)`);S.setAttribute('transform',`rotate(${sec*6} 100 100)`)};u();t=setInterval(u,250)}
     return()=>clearInterval(t)}});
-def('calendar',{label:'Kalender',icon:'calendar-days',cat:'zeit',w:300,h:260,minW:200,minH:180,init:()=>({}),
-  mount(I){const wd=h('div',{class:'wd'}),dn=h('div',{class:'dn num'}),my=h('div',{class:'my'}),kw=h('div',{class:'kw'});I.body.append(h('div',{class:'cal'},wd,dn,my,kw));
-    const u=()=>{const n=new Date();wd.textContent=WD[n.getDay()];dn.textContent=n.getDate()+'.';my.textContent=`${MO[n.getMonth()]} ${n.getFullYear()}`;kw.textContent=`Kalenderwoche ${isoWeek(n)}`};u();const t=setInterval(u,30000);return()=>clearInterval(t)}});
+/* ---------- Kalender mit saisonalen Designs ----------
+   Feste Anlässe (Halloween, Samichlaus, Advent/Weihnachten, Neujahr, Fasnacht, Ostern, Frühling) werden berechnet,
+   Schulferien trägt die Lehrperson pro Profil ein (je nach Gemeinde verschieden). */
+const SEASONS={
+  halloween:{n:'Halloween',bg:'linear-gradient(160deg,#2b1442,#110a1c)',fg:'#fde8d4',acc:'#ff8a1f',rfg:'#1d0c00',icon:'🎃',deco:{m:'float',c:['🦇','🦇','👻'],n:5},day:'Happy Halloween!'},
+  samichlaus:{n:'Samichlaus',bg:'linear-gradient(170deg,#a51f1f,#5e0f0f)',fg:'#fff',acc:'#ffd166',rfg:'#3a1a00',icon:'🎅',deco:{m:'fall',c:['❄','❅','•'],n:22,col:'#fff'},day:'Heute kommt der Samichlaus!'},
+  weihnachten:{n:'Weihnachten',bg:'linear-gradient(170deg,#11443a,#08261f)',fg:'#fff',acc:'#e63946',rfg:'#fff',icon:'🎄',deco:{m:'fall',c:['❄','❅','•','•'],n:26,col:'#fff'},day:'Frohe Weihnachten!'},
+  neujahr:{n:'Neujahr',bg:'linear-gradient(170deg,#18204a,#05081a)',fg:'#fff',acc:'#ffd166',rfg:'#2a1c00',icon:'🎆',deco:{m:'twinkle',c:['✨','⭐','✨','🎆'],n:12},day:'Es guets Neus!'},
+  fasnacht:{n:'Fasnacht',bg:'linear-gradient(135deg,#ffe066,#ff6fa5 52%,#6fd0ff)',fg:'#1b1033',acc:'#1b1033',rfg:'#fff',icon:'🎭',deco:{m:'fall',c:['●','■','▲','●'],n:28,multi:true},day:'Rüüdig schöni Fasnacht!'},
+  ostern:{n:'Ostern',bg:'linear-gradient(170deg,#fff3c4,#d6f0c2)',fg:'#2f4a1a',acc:'#7a3fc4',rfg:'#fff',icon:'🐰',deco:{m:'bob',c:['🥚','🐣','🌷','🥚'],n:6},day:'Frohe Ostern!'},
+  fruehling:{n:'Frühlingsanfang',bg:'linear-gradient(170deg,#ecfae2,#c4ebd2)',fg:'#1f4d2b',acc:'#d94a8c',rfg:'#fff',icon:'🌷',deco:{m:'fall',c:['🌸','🌼','🌸'],n:10},day:'Der Frühling ist da!'},
+  sommer:{n:'Sommerferien',bg:'linear-gradient(180deg,#8fd3ff,#ffe9a8 72%,#ffd27a)',fg:'#0f2f48',acc:'#ff7a1a',rfg:'#fff',icon:'☀️',deco:{m:'bob',c:['🏖️','🍦','⛱️','🐚'],n:5},day:'Schöne Sommerferien!'},
+  herbst:{n:'Herbstferien',bg:'linear-gradient(170deg,#ffe2c2,#efb07a)',fg:'#4a2410',acc:'#b5480e',rfg:'#fff',icon:'🍁',deco:{m:'fall',c:['🍂','🍁','🍂'],n:12},day:'Schöne Herbstferien!'},
+  winter:{n:'Sportferien',bg:'linear-gradient(180deg,#d6eaff,#ffffff)',fg:'#0f2a4a',acc:'#1f5fd1',rfg:'#fff',icon:'⛷️',deco:{m:'fall',c:['❄','❅','•'],n:22,col:'#7aa7e0'},day:'Schöne Sportferien!'},
+  ferien:{n:'Ferien',bg:'linear-gradient(160deg,#e3eeff,#fbe3ff)',fg:'#1a2230',acc:'#7a3fc4',rfg:'#fff',icon:'🎉',deco:{m:'fall',c:['🎉','✨','🎈'],n:9},day:'Schöne Ferien!'}};
+const day0=d=>new Date(d.getFullYear(),d.getMonth(),d.getDate());
+const addD=(d,n)=>new Date(d.getFullYear(),d.getMonth(),d.getDate()+n);
+function easter(y){const a=y%19,b=Math.floor(y/100),c=y%100,d=Math.floor(b/4),e=b%4,f=Math.floor((b+8)/25),g=Math.floor((b-f+1)/3),h2=(19*a+b-d-g+15)%30,i=Math.floor(c/4),k=c%4,l=(32+2*e+2*i-h2-k)%7,m=Math.floor((a+11*h2+22*l)/451),mo=Math.floor((h2+l-7*m+114)/31),da=((h2+l-7*m+114)%31)+1;return new Date(y,mo-1,da)}
+function parseCH(t){const m=(t||'').match(/(\d{1,2})\.(\d{1,2})\.(\d{2,4})/);if(!m)return null;let y=+m[3];if(y<100)y+=2000;const d=new Date(y,+m[2]-1,+m[1]);return isNaN(d)?null:d}
+function parseHolidays(txt){return(txt||'').split('\n').map(l=>{const ds=[...l.matchAll(/\d{1,2}\.\d{1,2}\.\d{2,4}/g)].map(x=>parseCH(x[0]));if(!ds[0])return null;const name=l.split(/[:\d]/)[0].trim()||'Ferien';
+  const lo=name.toLowerCase();const th=/sommer/.test(lo)?'sommer':/herbst/.test(lo)?'herbst':/sport|winter|ski/.test(lo)?'winter':/früh|frueh|oster/.test(lo)?'fruehling':/weihn/.test(lo)?'weihnachten':'ferien';return{name,start:ds[0],end:ds[1]||ds[0],th}}).filter(Boolean)}
+/* Liefert das aktuell passende Ereignis: {th, label, days (bis zum Tag), during} oder null */
+function seasonFor(now,holidays,off){const t=day0(now),y=t.getFullYear(),E=[];
+  const add=(th,label,target,lead,until,prio,dayTxt)=>{if(off&&off.includes(th))return;const from=addD(target,-lead);if(t>=from&&t<=until)E.push({th,label,days:Math.round((target-t)/864e5),prio,dayTxt})};
+  for(const yy of[y-1,y,y+1]){
+    add('halloween','Halloween',new Date(yy,9,31),7,new Date(yy,9,31),2);
+    add('samichlaus','zum Samichlaus',new Date(yy,11,6),4,new Date(yy,11,6),3);
+    add('weihnachten','Weihnachten',new Date(yy,11,24),23,new Date(yy,11,26),1,'Frohe Weihnachten!');
+    add('neujahr','Neujahr',new Date(yy+1,0,1),4,new Date(yy+1,0,2),2);
+    const ea=easter(yy);add('fasnacht','zur Fasnacht',addD(ea,-52),7,addD(ea,-46),2);add('ostern','Ostern',ea,7,addD(ea,1),2);
+    add('fruehling','zum Frühlingsanfang',new Date(yy,2,20),2,new Date(yy,2,21),1)}
+  for(const H of holidays||[]){if(off&&off.includes('schulferien'))break;const from=addD(H.start,-7),last=addD(H.start,-1);/* Countdown bis zum letzten Schultag davor, während der Ferien Gruss */
+    if(t>=from&&t<=H.end){const during=t>=H.start;E.push({th:H.th,label:H.name,days:during?0:Math.round((H.start-t)/864e5),prio:4,dayTxt:`Schöne ${H.name}!`,ferien:true,during})}}
+  if(!E.length)return null;E.sort((a,b)=>(b.prio-a.prio)||(a.days-b.days));return E[0]}
+function seasonText(ev){const S=SEASONS[ev.th];if(ev.ferien){if(ev.days<=0)return ev.dayTxt;if(ev.days===1)return`Morgen beginnen die ${ev.label}!`;return`Noch ${ev.days} Tage bis zu den ${ev.label}`}
+  if(ev.days<0)return ev.th==='neujahr'?'Es guets Neus!':ev.dayTxt||S.day;if(ev.days===0)return ev.dayTxt||S.day;if(ev.days===1)return ev.th==='neujahr'?'Morgen ist Neujahr! En guete Rutsch!':`Morgen ist ${ev.label.replace(/^(zum|zur) /,'')}!`;
+  return`Noch ${ev.days} Tage bis ${ev.label}`}
+function decoLayer(S){const L=h('div',{class:'deco deco-'+S.deco.m,'aria-hidden':'true'});const D=S.deco;const pal=['#e63946','#1f5fd1','#16a34a','#ffd166','#7a3fc4','#ff7a1a'];
+  for(let k=0;k<D.n;k++){const ch=D.c[k%D.c.length];const sp=h('span',{class:'p'},ch);const r=Math.random;const st=sp.style;
+    st.setProperty('--x',(r()*100).toFixed(1)+'%');st.setProperty('--y',(8+r()*70).toFixed(1)+'%');st.setProperty('--s',(D.m==='fall'&&/[❄❅•●■▲]/.test(ch)?.6+r()*.9:.8+r()*.7).toFixed(2));
+    st.setProperty('--d',(D.m==='fall'?6+r()*7:D.m==='float'?9+r()*8:D.m==='twinkle'?1.6+r()*2.4:2.4+r()*1.8).toFixed(2)+'s');st.setProperty('--dl',(-r()*12).toFixed(2)+'s');st.setProperty('--sw',((r()-.5)*40).toFixed(0)+'px');
+    if(D.col)st.color=D.col;if(D.multi)st.color=pal[k%pal.length];if(D.m==='bob')st.setProperty('--x',((k+.5)/D.n*100).toFixed(1)+'%');L.append(sp)}return L}
+def('calendar',{label:'Kalender',icon:'calendar-days',cat:'zeit',init:()=>({season:true,off:[]}),
+  settings(I,p){const d=I.data;if(d.season==null)d.season=true;if(!d.off)d.off=[];
+    p.append(h('label',{class:'row'},h('input',{type:'checkbox',checked:d.season,onchange:e=>d.season=e.target.checked,style:{width:'22px',height:'22px'}}),'Saisonale Designs vor besonderen Tagen'),
+      field('Vorschau (nur jetzt, wird nicht gespeichert)',chipGroup([['','Automatisch'],...Object.entries(SEASONS).map(([k,v])=>[k,v.icon+' '+v.n])],I.preview||'',v=>{I.preview=v||null})),
+      field('Diese Anlässe anzeigen',h('div',{class:'chips',style:{justifyContent:'flex-start'}},[['halloween','🎃 Halloween'],['samichlaus','🎅 Samichlaus'],['weihnachten','🎄 Advent/Weihnachten'],['neujahr','🎆 Neujahr'],['fasnacht','🎭 Fasnacht'],['ostern','🐰 Ostern'],['fruehling','🌷 Frühling'],['schulferien','☀️ Schulferien']].map(([k,l])=>h('button',{class:'chip'+(d.off.includes(k)?'':' on'),'aria-pressed':String(!d.off.includes(k)),onclick:e=>{d.off=d.off.includes(k)?d.off.filter(x=>x!==k):[...d.off,k];e.currentTarget.classList.toggle('on',!d.off.includes(k));e.currentTarget.setAttribute('aria-pressed',String(!d.off.includes(k)))}},l)))),
+      h('label',{class:'field'},h('span',null,'Schulferien eurer Schule (gilt fürs ganze Profil)'),h('textarea',{class:'inp num',rows:6,value:APP.P.holidays||'',placeholder:'Sportferien: 30.01.2027 - 14.02.2027\nFrühlingsferien: 03.04.2027 - 18.04.2027\nSommerferien: 03.07.2027 - 08.08.2027\nHerbstferien: 02.10.2027 - 17.10.2027',oninput:e=>APP.P.holidays=e.target.value,style:{minHeight:'140px'}})),
+      h('div',{class:'hint'},'Eine Zeile pro Ferien: Name, Doppelpunkt, erster und letzter Ferientag. Eine Woche vorher startet der Countdown. Das Design richtet sich nach dem Namen (Sommer, Herbst, Sport, Frühling).'))},
+  mount(I){const d=I.data;if(d.season==null)d.season=true;
+    const wd=h('div',{class:'wd'}),dn=h('div',{class:'dn num'}),my=h('div',{class:'my'}),kw=h('div',{class:'kw'}),rib=h('div',{class:'cal-rib',hidden:true}),icon=h('div',{class:'cal-ic','aria-hidden':'true',hidden:true});
+    const box=h('div',{class:'cal'},h('div',{class:'cal-main'},wd,dn,my,kw),rib,icon);I.body.append(box);let cur='';
+    const u=()=>{const n=new Date();wd.textContent=WD[n.getDay()];dn.textContent=n.getDate()+'.';my.textContent=`${MO[n.getMonth()]} ${n.getFullYear()}`;kw.textContent=`Kalenderwoche ${isoWeek(n)}`;
+      let ev=null;if(I.preview){const S=SEASONS[I.preview];ev={th:I.preview,label:({samichlaus:'zum Samichlaus',fasnacht:'zur Fasnacht',fruehling:'zum Frühlingsanfang'})[I.preview]||S.n,days:5,ferien:['sommer','herbst','winter','ferien'].includes(I.preview)}}else if(d.season)ev=seasonFor(n,parseHolidays(APP.P.holidays),d.off||[]);
+      const key=ev?ev.th+'|'+seasonText(ev):'';if(key===cur)return;cur=key;box.querySelector('.deco')?.remove();
+      if(!ev){box.classList.remove('season');box.removeAttribute('style');rib.hidden=true;icon.hidden=true;I.setTitle('Kalender');return}
+      const S=SEASONS[ev.th];box.classList.add('season');box.style.cssText=`--s-bg:${S.bg};--s-fg:${S.fg};--s-acc:${S.acc};--s-rfg:${S.rfg};--s-glow:${(S.bg.match(/#[0-9a-f]{6}/gi)||['#000'])[1]||'#000'}`;box.prepend(decoLayer(S));
+      rib.textContent=seasonText(ev);rib.hidden=false;icon.textContent=S.icon;icon.hidden=false;I.setTitle('Kalender · '+S.icon)};
+    u();const t=setInterval(u,60000);return()=>clearInterval(t)}});
 def('countdown',{label:'Countdown',icon:'calendar-clock',cat:'zeit',w:360,h:280,minW:240,minH:200,
   init:()=>({title:'Weihnachtsferien',date:nextDate(11,19,12)}),
   settings(I,p){const d=I.data;p.append(h('label',{class:'field'},h('span',null,'Anlass'),h('input',{class:'inp',value:d.title,maxlength:60,oninput:e=>d.title=e.target.value})),h('label',{class:'field'},h('span',null,'Datum und Uhrzeit'),h('input',{class:'inp',type:'datetime-local',value:d.date,onchange:e=>d.date=e.target.value})))},
@@ -3113,7 +3193,7 @@ def('stickers',{label:'Sticker',icon:'sticker',cat:'inhalt',w:240,h:240,minW:140
   settings(I,p){const d=I.data;p.append(h('div',{class:'st-pick'},STICK.map(s=>h('button',{'aria-label':'Sticker '+s,onclick:()=>{d.s=s;I.refresh();save()}},s))))},
   mount(I){I.body.append(h('div',{class:'st',role:'img','aria-label':'Sticker'},I.data.s))}});
 
-const SIZES={timer:[320,310,170,170],visualtimer:[300,430,170,200],stopwatch:[320,240,180,160],clock:[240,240,140,140],calendar:[240,210,150,130],countdown:[300,220,170,130],timetable:[320,380,200,160],
+const SIZES={timer:[320,310,170,170],visualtimer:[300,430,170,200],stopwatch:[320,240,180,160],clock:[240,240,140,140],calendar:[260,250,170,160],countdown:[300,220,170,130],timetable:[320,380,200,160],
   soundlevel:[340,220,180,150],trafficlight:[150,300,90,170],worksymbols:[340,210,160,130],randomizer:[360,300,200,170],groupmaker:[480,340,240,180],scoreboard:[360,220,180,130],poll:[380,340,220,260],dice:[300,210,150,130],
   text:[380,200,160,100],draw:[600,420,260,200],image:[400,300,160,150],pdf:[560,460,240,200],video:[560,360,240,210],embed:[600,420,240,180],hyperlink:[300,170,170,140],qr:[260,320,150,170],webcam:[480,340,200,150],stickers:[180,180,100,100]};
 for(const[k,v]of Object.entries(SIZES))if(WIDGETS[k])Object.assign(WIDGETS[k],{w:v[0],h:v[1],minW:v[2],minH:v[3]});
