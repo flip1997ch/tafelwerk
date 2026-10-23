@@ -97,13 +97,6 @@ textarea.inp{min-height:120px;resize:vertical;line-height:1.5}
 .apr-card.out{transition:opacity .35s,transform .35s;opacity:0;transform:scale(.85)}
 
 /* Einrasten */
-#guides{position:absolute;inset:0;pointer-events:none;z-index:99990}
-.gd{position:absolute;background:#e5197a;box-shadow:0 0 0 1px rgba(255,255,255,.7)}
-.gd.x{width:2px;margin-left:-1px}.gd.y{height:2px;margin-top:-1px}
-.gd.mid{background:#7a3fc4}
-.gd-gap{position:absolute;display:block}
-.gd-gap.x{height:16px;border-left:2px solid #e5197a;border-right:2px solid #e5197a;background:linear-gradient(#e5197a,#e5197a) center/100% 2px no-repeat}
-.gd-gap.y{width:16px;border-top:2px solid #e5197a;border-bottom:2px solid #e5197a;background:linear-gradient(#e5197a,#e5197a) center/2px 100% no-repeat}
 .w.dragging{box-shadow:0 20px 44px rgba(18,32,64,.26),0 2px 6px rgba(18,32,64,.1)}
 .w.anim{transition:left .28s ease,top .28s ease,width .28s ease,height .28s ease}
 .dk-side .ibtn.on{background:var(--accent-soft);color:var(--accent)}
@@ -111,10 +104,11 @@ textarea.inp{min-height:120px;resize:vertical;line-height:1.5}
 
 /* Widgets */
 .w{position:absolute;display:flex;flex-direction:column;background:var(--card);border:1px solid var(--line);border-radius:var(--r);box-shadow:var(--shadow);overflow:hidden}
-.wh{display:flex;align-items:center;gap:6px;padding:4px 4px 4px 12px;min-height:48px;border-bottom:1px solid var(--line);cursor:grab;touch-action:none;user-select:none;-webkit-user-select:none}
+.wh{display:flex;align-items:center;gap:2px;padding:2px;min-height:40px;border-bottom:1px solid var(--line);cursor:grab;touch-action:none;user-select:none;-webkit-user-select:none}
 .wh:active{cursor:grabbing}
 .wh .t{flex:1;min-width:0;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.wh .ibtn{width:40px;height:40px;color:var(--muted)}
+.wh .ibtn{width:36px;height:36px;color:var(--muted)}
+.wh .ibtn .ic{width:20px;height:20px}
 .wb{position:relative;flex:1;min-height:0;container-type:size;overflow:hidden}
 .rz{position:absolute;right:0;bottom:0;width:30px;height:30px;cursor:nwse-resize;touch-action:none;z-index:5}
 .rz::after{content:"";position:absolute;right:6px;bottom:6px;width:12px;height:12px;border-right:3px solid var(--line);border-bottom:3px solid var(--line);border-radius:0 0 4px 0}
@@ -369,7 +363,7 @@ textarea.inp{min-height:120px;resize:vertical;line-height:1.5}
 </head>
 <body>
 <div id="app" hidden>
-  <main id="board" aria-label="Tafel"><div id="guides" aria-hidden="true"></div></main>
+  <main id="board" aria-label="Tafel"></main>
   <nav id="dock" aria-label="Werkzeuge"></nav>
 </div>
 <div id="gate"></div>
@@ -2785,14 +2779,14 @@ function addWidget(type){const D=WIDGETS[type],B=$('#board').getBoundingClientRe
   const spot=freeSpot(w,hh);const rec={id:uid(),type,w,h:hh,x:spot?spot.x:Math.round(clamp((B.width-w)/2+n*28-70,8,B.width-w-8)),y:spot?spot.y:Math.round(clamp((B.height-hh)/2+n*28-70,8,B.height-hh-8)),z:++APP.P.z,data:D.init()};
   APP.P.widgets.push(rec);mountWidget(rec);save()}
 function removeWidget(id){const I=APP.inst.get(id);if(!I)return;I.destroy();APP.P.widgets=APP.P.widgets.filter(r=>r.id!==id);save()}
-function clearBoard(){for(const I of APP.inst.values())I.destroy();APP.inst.clear();$('#board').replaceChildren(h('div',{id:'guides','aria-hidden':'true'}))}
+function clearBoard(){for(const I of APP.inst.values())I.destroy();APP.inst.clear();$('#board').replaceChildren()}
 
 function mountWidget(rec){const D=WIDGETS[rec.type];if(!D)return;const board=$('#board');
   const title=h('div',{class:'t'});
   const body=h('div',{class:'wb'});
   const btns=[];
   const I={rec,data:rec.data,body,D,cleanup:null,cfgOpen:false,save,
-    setTitle(t){title.textContent=t},
+    setTitle(t){el.setAttribute('aria-label',t)},
     alarm(){el.classList.add('ring');if(I._snd)I._snd();const d=I.data;I._snd=playSound(d.sound||APP.P.defaultSound||'gong',d.vol,d.rep==null?3:d.rep);clearTimeout(I._rt2);I._rt2=setTimeout(()=>I.stopAlarm(),120000)},
     stopAlarm(){el.classList.remove('ring');clearTimeout(I._rt2);if(I._snd){I._snd();I._snd=null}},
     refresh(){if(I.cleanup){try{I.cleanup()}catch(e){}}I.cleanup=null;body.replaceChildren();I.cfgOpen=false;I.setTitle(D.label);const r=D.mount(I);if(typeof r==='function')I.cleanup=r},
@@ -2800,7 +2794,7 @@ function mountWidget(rec){const D=WIDGETS[rec.type];if(!D)return;const board=$('
     destroy(){I.stopAlarm();if(I.cleanup){try{I.cleanup()}catch(e){}}if(I.ro)I.ro.disconnect();el.remove();APP.inst.delete(rec.id)}};
   if(D.settings)btns.push(h('button',{class:'ibtn','aria-label':'Einstellungen',title:'Einstellungen',onclick:()=>I.openCfg()},ic('settings')));
   btns.push(h('button',{class:'ibtn','aria-label':'Schliessen',title:'Schliessen',onclick:()=>removeWidget(rec.id)},ic('x')));
-  const head=h('div',{class:'wh'},ic(D.icon,'cat-'+D.cat),title,btns);
+  const head=h('div',{class:'wh',title:'Zum Verschieben ziehen'},title,btns);
   const rz=h('div',{class:'rz','aria-hidden':'true'});
   const el=h('section',{class:'w','aria-label':D.label},head,body,rz);I.el=el;
   el.addEventListener('pointerdown',()=>{front(I);if(el.classList.contains('ring'))I.stopAlarm()},true);
@@ -2813,7 +2807,7 @@ function place(I){const r=I.rec;Object.assign(I.el.style,{left:r.x+'px',top:r.y+
 function front(I){if(I.rec.z===APP.P.z)return;I.rec.z=++APP.P.z;I.el.style.zIndex=I.rec.z;save()}
 /* ============ Einrasten ============
    Widgets rasten an Kanten und Mitten anderer Widgets, am Tafelrand und im festen Abstand (GAP) neben anderen ein.
-   Hilfslinien zeigen, woran ausgerichtet wird. Alt-Taste gedrückt halten = vorübergehend frei schieben. */
+   Alt-Taste gedrückt halten = vorübergehend frei schieben. */
 const GAP=12,SNAP_T=14;
 const snapOn=()=>APP.P&&APP.P.snap!==false;
 function snapLines(self,axis,B){const L=[],W=axis==='x'?B.width:B.height;
@@ -2827,14 +2821,6 @@ function snapLines(self,axis,B){const L=[],W=axis==='x'?B.width:B.height;
   return L}
 const prio=l=>l.gap!=null?2:l.board?0:1;
 function bestSnap(edges,lines){let best=null;for(const[k,val]of Object.entries(edges)){if(val==null)continue;for(const l of lines){if(!l.e.includes(k))continue;const d=l.v-val;if(Math.abs(d)>SNAP_T)continue;if(!best||Math.abs(d)<Math.abs(best.d)-.5||(Math.abs(Math.abs(d)-Math.abs(best.d))<=.5&&prio(l)>prio(best.l)))best={d,l,k}}}return best}
-function showGuides(r,sx,sy,B){const g=$('#guides');g.replaceChildren();
-  const mk=(axis,s)=>{const l=s.l;let pos=l.gap!=null?(l.gap+(l.v-l.gap)/2):l.v,from,to;
-    if(l.board){from=0;to=axis==='x'?B.height:B.width}else{const o=l.o;from=Math.min(axis==='x'?o.y:o.x,axis==='x'?r.y:r.x);to=Math.max(axis==='x'?o.y+o.h:o.x+o.w,axis==='x'?r.y+r.h:r.x+r.w)}
-    if(l.gap!=null){/* Abstands-Markierung zwischen den beiden Widgets */const o=l.o,mid=axis==='x'?Math.max(o.y,r.y)+(Math.min(o.y+o.h,r.y+r.h)-Math.max(o.y,r.y))/2:Math.max(o.x,r.x)+(Math.min(o.x+o.w,r.x+r.w)-Math.max(o.x,r.x))/2;
-      const a=Math.min(l.gap,l.v),len=Math.abs(l.v-l.gap);g.append(h('i',{class:'gd-gap '+axis,style:axis==='x'?{left:a+'px',top:mid-8+'px',width:len+'px'}:{top:a+'px',left:mid-8+'px',height:len+'px'}}));return}
-    g.append(h('i',{class:'gd '+axis+(l.board&&l.e[0]==='c'?' mid':''),style:axis==='x'?{left:pos+'px',top:from+'px',height:to-from+'px'}:{top:pos+'px',left:from+'px',width:to-from+'px'}}))};
-  if(sx)mk('x',sx);if(sy)mk('y',sy)}
-function clearGuides(){const g=$('#guides');if(g)g.replaceChildren()}
 function dragify(handle,I,mode){handle.addEventListener('pointerdown',e=>{if(e.button>0)return;if(mode==='move'&&e.target.closest('button,input,select,textarea'))return;e.preventDefault();const r=I.rec,D=I.D,B=$('#board').getBoundingClientRect();const sx=e.clientX,sy=e.clientY,ox=r.x,oy=r.y,ow=r.w,oh=r.h;try{handle.setPointerCapture(e.pointerId)}catch(_){}
   I.el.classList.add('dragging');
   const mv=ev=>{const dx=ev.clientX-sx,dy=ev.clientY-sy,free=ev.altKey||!snapOn();let gx=null,gy=null;
@@ -2844,8 +2830,8 @@ function dragify(handle,I,mode){handle.addEventListener('pointerdown',e=>{if(e.b
     else{let w=ow+dx,hh=oh+dy;
       if(!free){const self={rec:r,r:{x:r.x,y:r.y,w,h:hh}};gx=bestSnap({b:r.x+w},snapLines(self,'x',B));if(gx)w+=gx.d;gy=bestSnap({b:r.y+hh},snapLines(self,'y',B));if(gy)hh+=gy.d}
       r.w=Math.round(clamp(w,D.minW,B.width-r.x));r.h=Math.round(clamp(hh,D.minH,B.height-r.y))}
-    place(I);if(gx||gy)showGuides(r,gx,gy,B);else clearGuides()};
-  const up=()=>{handle.removeEventListener('pointermove',mv);handle.removeEventListener('pointerup',up);handle.removeEventListener('pointercancel',up);I.el.classList.remove('dragging');clearGuides();save()};
+    place(I)};
+  const up=()=>{handle.removeEventListener('pointermove',mv);handle.removeEventListener('pointerup',up);handle.removeEventListener('pointercancel',up);I.el.classList.remove('dragging');save()};
   handle.addEventListener('pointermove',mv);handle.addEventListener('pointerup',up);handle.addEventListener('pointercancel',up)})}
 /* Freien Platz für ein neues Widget suchen (von oben links, zeilenweise) */
 function freeSpot(w,hh){const B=$('#board').getBoundingClientRect(),R=[...APP.inst.values()].map(I=>I.rec);const hit=(x,y)=>R.some(o=>x<o.x+o.w+GAP&&x+w+GAP>o.x&&y<o.y+o.h+GAP&&y+hh+GAP>o.y);
@@ -3091,8 +3077,8 @@ def('randomizer',{label:'Zufallsname',icon:'shuffle',cat:'klasse',
           if(t<1)raf=requestAnimationFrame(step);else{rot%=2*Math.PI;const b=stage.querySelector('.rd-banner');if(b){b.textContent=pick;b.hidden=false;b.classList.remove('pop');void b.offsetWidth;b.classList.add('pop')}finish(pick)}};raf=requestAnimationFrame(step)}};
     const view=d.anim==='wheel'?wheel:d.anim==='quick'?quick:slot;
     go.addEventListener('click',()=>{if(busy)return;const all=names();const pl=pool();if(!all.length){msg('Keine Namen vorhanden');return}if(!pl.length){msg('Alle gezogen. Zurücksetzen?');return}
-      ac();busy=true;const fy=new Date().getFullYear(),test=!!APP.foolNext,fool=test||(foolOn()&&isApr1()&&APP.P.aprilPick!==fy);
-      if(fool){APP.foolNext=false;if(!test){APP.P.aprilPick=fy;save()}}const pick=fool?teacherPick():pl[Math.floor(Math.random()*pl.length)];view.run(pick,all)});
+      ac();busy=true;const fy=new Date().getFullYear(),fool=foolOn()&&isApr1()&&APP.P.aprilPick!==fy;
+      if(fool){APP.P.aprilPick=fy;save()}const pick=fool?teacherPick():pl[Math.floor(Math.random()*pl.length)];view.run(pick,all)});
     view.reset();drawDone();
     I.redraw=()=>{if(!busy){if(view===wheel)wheel.draw();else if(view===slot)slot.fit()}};
     const ro=new ResizeObserver(()=>requestAnimationFrame(()=>I.redraw()));ro.observe(stage);
@@ -3218,16 +3204,16 @@ for(const[k,v]of Object.entries(SIZES))if(WIDGETS[k])Object.assign(WIDGETS[k],{w
    1. April: Um 9 Uhr (bzw. beim ersten Öffnen bis 12 Uhr) steht die Tafel kopf, bis jemand antippt (max. 12 s).
    Der erste Zufallsname des Tages ist die Lehrperson. Beides einmal pro Jahr und Profil. */
 const isApr1=()=>{const n=new Date();return n.getMonth()===3&&n.getDate()===1};
-const foolOn=()=>APP.P&&APP.P.april!==false;
-const teacherPick=()=>'🫵 '+((APP.P&&APP.P.teacherName||'').trim()||'Die Lehrperson')+'!';
+const foolOn=()=>!!APP.P;
+const teacherPick=()=>'🫵 Die Lehrperson!';
 function aprilBanner(){const host=h('div',{class:'apr-host'});const card=h('div',{class:'apr-card'},h('div',{class:'apr-fish'},'🐟'),h('b',null,'April, April!'));host.append(card);document.body.append(host);
   requestAnimationFrame(()=>confetti(host));tada(70);setTimeout(()=>{card.classList.add('out');setTimeout(()=>host.remove(),400)},3600)}
-function aprilFlip(test){if(APP.flipping||!APP.P)return;APP.flipping=true;if(!test){APP.P.aprilFlip=new Date().getFullYear();save()}
+function aprilFlip(){if(APP.flipping||!APP.P)return;APP.flipping=true;APP.P.aprilFlip=new Date().getFullYear();save();
   document.querySelector('.ov')?.remove();const app=$('#app');const shield=h('div',{class:'flip-shield','aria-label':'Antippen'});document.body.append(shield);
   app.classList.remove('flip-out');app.classList.add('flip-in');let done=false;
   const back=()=>{if(done)return;done=true;clearTimeout(t);shield.remove();app.classList.remove('flip-in');app.classList.add('flip-out');setTimeout(()=>{app.classList.remove('flip-out');APP.flipping=false;aprilBanner()},950)};
   const t=setTimeout(back,12000);setTimeout(()=>shield.addEventListener('pointerdown',back),700)}
-setInterval(()=>{if(!APP.P||document.hidden||APP.flipping||!foolOn()||!isApr1())return;const n=new Date(),hr=n.getHours();if(hr>=9&&hr<12&&APP.P.aprilFlip!==n.getFullYear())aprilFlip(false)},10000);
+setInterval(()=>{if(!APP.P||document.hidden||APP.flipping||!foolOn()||!isApr1())return;const n=new Date(),hr=n.getHours();if(hr>=9&&hr<12&&APP.P.aprilFlip!==n.getFullYear())aprilFlip()},10000);
 
 /* ============ Werkzeugleiste ============ */
 function buildDock(){const dk=$('#dock');dk.replaceChildren();const P=APP.P;
@@ -3259,8 +3245,8 @@ function openBackgrounds(){const P=APP.P;const grid=h('div',{class:'bgs'});let c
   draw();close=modal('Hintergrund',[grid,h('div',{class:'hint'},'Eigene Bilder werden verkleinert und nur in diesem Browser gespeichert. Keine Fotos von Kindern verwenden.')])}
 
 function openSettings(tab){let cur=tab||'klassen';const tabs=h('div',{class:'tabs',role:'tablist'});const pane=h('div');
-  const T=[['klassen','Klassen'],['screens','Bildschirme'],['toene','Klingeltöne'],['extras','Extras'],['profil','Profil'],['daten','Datenschutz']];
-  function draw(){tabs.replaceChildren(...T.filter(([k])=>!(APP.guest&&k==='profil')).map(([k,l])=>h('button',{class:'tab'+(cur===k?' on':''),role:'tab','aria-selected':String(cur===k),onclick:()=>{cur=k;draw()}},l)));pane.replaceChildren(({klassen:paneClasses,screens:paneScreens,toene:paneTones,extras:paneExtras,profil:paneProfile,daten:paneData})[cur](draw))}
+  const T=[['klassen','Klassen'],['screens','Bildschirme'],['toene','Klingeltöne'],['profil','Profil'],['daten','Datenschutz']];
+  function draw(){tabs.replaceChildren(...T.filter(([k])=>!(APP.guest&&k==='profil')).map(([k,l])=>h('button',{class:'tab'+(cur===k?' on':''),role:'tab','aria-selected':String(cur===k),onclick:()=>{cur=k;draw()}},l)));pane.replaceChildren(({klassen:paneClasses,screens:paneScreens,toene:paneTones,profil:paneProfile,daten:paneData})[cur](draw))}
   draw();modal('Einstellungen',[tabs,pane])}
 
 function paneClasses(redraw){const P=APP.P;let sel=P.activeClassId||(P.classes[0]&&P.classes[0].id)||'new';const wrap=h('div',{class:'split'});
@@ -3299,13 +3285,6 @@ function paneProfile(redraw){const prof=APP.profiles.find(p=>p.id===APP.pid);con
       h('div',{class:'note'},'Die PIN verhindert, dass Kinder am Whiteboard dein Profil öffnen. Sie ist ein Sichtschutz, keine Verschlüsselung: Wer Zugriff auf das Windows-Konto hat, kann die Daten technisch auslesen.')),
     h('div',{class:'field'},h('span',null,'Profil löschen'),h('div',{class:'row'},armed(h('button',{class:'btn danger'},'Profil mit allen Daten löschen'),'Endgültig löschen?',()=>{LS.del(K_P+prof.id);deleteProfileSounds(prof.id);APP.profiles=APP.profiles.filter(p=>p!==prof);saveProfiles();APP.pid=null;APP.P=null;document.querySelector('.ov')?.remove();clearBoard();showGate()}))))}
 
-function paneExtras(){const P=APP.P;
-  return h('div',{style:{display:'grid',gap:'18px',maxWidth:'680px'}},
-    h('div',{class:'prose'},h('h3',null,'🐟 Aprilscherz am 1. April'),h('p',null,'Um 9 Uhr steht die ganze Tafel plötzlich kopf. Antippen (oder 12 Sekunden warten) dreht sie zurück, dann erscheint «April, April!». Ist die Tafel um 9 Uhr noch nicht offen, passiert es beim ersten Öffnen bis 12 Uhr.'),h('p',null,'Beim ersten Zufallsnamen des Tages ist die Lehrperson dran. Danach wird ganz normal gezogen.')),
-    h('label',{class:'row'},h('input',{type:'checkbox',id:'apr-on',checked:P.april!==false,onchange:e=>{P.april=e.target.checked;save()},style:{width:'22px',height:'22px'}}),'Aprilscherz einschalten'),
-    h('label',{class:'field'},h('span',null,'So erscheint die Lehrperson beim Zufallsnamen'),h('input',{class:'inp',id:'apr-name',value:P.teacherName||'',placeholder:'Die Lehrperson',maxlength:30,oninput:e=>{P.teacherName=e.target.value;save()}})),
-    h('div',{class:'row'},h('button',{class:'btn',onclick:()=>setTimeout(()=>aprilFlip(true),250)},'🙃 Tafel umdrehen testen'),h('button',{class:'btn',onclick:()=>{APP.foolNext=true;toast('Beim nächsten Ziehen ist die Lehrperson dran (nur dieser Test).')}},'🫵 Nächste Ziehung testen')),
-    h('div',{class:'hint'},'Die Tests zählen nicht: Am 1. April passiert trotzdem alles wie geplant.'))}
 function paneTones(redraw){const P=APP.P;
   const def=soundSelect(P.defaultSound||'gong',v=>{P.defaultSound=v;save();preview(v)},false);
   const builtins=h('div',{class:'tones'},Object.entries(SOUNDS).map(([k,v])=>h('button',{class:'tone',onclick:()=>preview(k)},ic('play'),v.n)));
