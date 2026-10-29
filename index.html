@@ -303,6 +303,22 @@ textarea.inp{min-height:120px;resize:vertical;line-height:1.5}
 @container (max-height:150px){.dc-sum{display:none}.dc{grid-template-rows:minmax(0,1fr)}}
 @container (max-height:230px){.cd .sub,.cal .kw{display:none}}
 
+/* Bühne */
+#stage-handle{display:none}
+#app.stage{grid-template-rows:minmax(0,1fr) 0}
+#app.stage #dock{display:none}
+#app.stage #stage-handle{display:flex;position:fixed;left:50%;bottom:10px;transform:translateX(-50%);z-index:99995;align-items:center;gap:10px;height:40px;padding:0 16px;border:0;border-radius:999px;background:rgba(29,36,33,.08);color:var(--muted);font-weight:600;font-size:15px;cursor:pointer;opacity:.75;transition:opacity .2s,background .2s}
+#app.stage #stage-handle:hover,#app.stage #stage-handle:focus-visible{opacity:1;background:rgba(29,36,33,.14)}
+#stage-handle i{width:40px;height:5px;border-radius:3px;background:rgba(29,36,33,.3)}
+#app.stage .w .wh{position:absolute;top:0;left:0;right:0;z-index:6;opacity:0;pointer-events:none;transition:opacity .2s;background:transparent}
+#app.stage .w.peek .wh{opacity:1;pointer-events:auto}
+#app.stage .w.peek .wh .ibtn{background:color-mix(in srgb,var(--card) 88%,transparent);box-shadow:0 1px 4px rgba(0,0,0,.12)}
+#app.stage .w .rz{display:none}
+#app.stage .w.peek .rz{display:block}
+#app.stage .nah{display:none!important}
+.dk-stage{display:inline-flex;align-items:center;gap:8px;height:44px;padding:0 16px;border:0;border-radius:12px;background:var(--ink);color:var(--card);font-weight:800;font-size:15px;cursor:pointer;flex:none}
+.dk-stage .ic{width:20px;height:20px}
+
 /* Werkzeugleiste und Widget-Auswahl */
 .dk-tools{align-items:center}
 .dk-add{flex:none;display:inline-flex;align-items:center;gap:8px;min-height:52px;padding:0 18px 0 14px;border-radius:14px;border:0;background:var(--accent);color:var(--accent-ink);font-weight:700;font-size:17px;cursor:pointer;box-shadow:0 2px 6px rgba(31,95,209,.3)}
@@ -550,6 +566,7 @@ textarea.inp{min-height:120px;resize:vertical;line-height:1.5}
 <div id="app" hidden>
   <main id="board" aria-label="Tafel"></main>
   <nav id="dock" aria-label="Werkzeuge"></nav>
+  <button type="button" id="stage-handle" aria-label="Werkzeuge zeigen (zurück in die Werkstatt)" title="Werkzeuge zeigen"><i></i><span>Werkzeuge</span></button>
 </div>
 <div id="gate"></div>
 <div id="toast" hidden role="status"></div>
@@ -3014,14 +3031,14 @@ function mountWidget(rec){const D=WIDGETS[rec.type];if(!D)return;const board=$('
     stopAlarm(){el.classList.remove('ring');clearTimeout(I._rt2);if(I._snd){I._snd();I._snd=null}},
     refresh(){if(I.cleanup){try{I.cleanup()}catch(e){}}I.cleanup=null;body.replaceChildren();I.cfgOpen=false;I.setTitle(D.label);const r=D.mount(I);if(typeof r==='function')I.cleanup=r},
     openCfg(){if(I.cfgOpen){I._cfgDone();return}I.cfgOpen=true;const panel=h('div',{class:'cfg'});const done=()=>{if(D.keepAlive){panel.remove();I.cfgOpen=false;if(I.applied)I.applied()}else I.refresh();save()};I._cfgDone=done;if(D.settings)D.settings(I,panel,done);panel.append(colorField(I),h('div',{class:'foot'},h('button',{class:'btn pri',onclick:done},ic('check'),'Fertig')));body.append(panel);const f=panel.querySelector('input,textarea,select');if(f)f.focus()},
-    destroy(){I.stopAlarm();if(I.cleanup){try{I.cleanup()}catch(e){}}if(I.ro)I.ro.disconnect();el.remove();APP.inst.delete(rec.id)}};
+    destroy(){clearTimeout(I._peek);I.stopAlarm();if(I.cleanup){try{I.cleanup()}catch(e){}}if(I.ro)I.ro.disconnect();el.remove();APP.inst.delete(rec.id)}};
   if(D.edit){I.editBtn=h('button',{class:'ibtn','aria-label':'Bearbeiten',title:'Bearbeiten',onclick:()=>I.toggleEdit&&I.toggleEdit()},ic('pencil-line'));btns.push(I.editBtn)}
   btns.push(h('button',{class:'ibtn','aria-label':'Einstellungen',title:'Einstellungen',onclick:()=>I.openCfg()},ic('settings')));
   btns.push(h('button',{class:'ibtn','aria-label':'Schliessen',title:'Schliessen',onclick:()=>removeWidget(rec.id)},ic('x')));
   const head=h('div',{class:'wh',title:'Zum Verschieben ziehen'},title,btns);
   const rz=h('div',{class:'rz','aria-hidden':'true'});
   const el=h('section',{class:'w','aria-label':D.label},head,body,rz);I.el=el;
-  el.addEventListener('pointerdown',()=>{front(I);if(el.classList.contains('ring'))I.stopAlarm()},true);
+  el.addEventListener('pointerdown',()=>{front(I);if(el.classList.contains('ring'))I.stopAlarm();if(APP.P&&APP.P.stage){el.classList.add('peek');clearTimeout(I._peek);I._peek=setTimeout(()=>{if(!I.cfgOpen&&!el.matches(':focus-within'))el.classList.remove('peek');else I._peek=setTimeout(()=>el.classList.remove('peek'),4000)},4000)}},true);
   place(I);applyWColor(I);board.append(el);APP.inst.set(rec.id,I);
   dragify(head,I,'move');dragify(rz,I,'size');
   I.refresh();
@@ -3651,6 +3668,7 @@ function buildDock(){const dk=$('#dock');dk.replaceChildren();const P=APP.P;
   const tools=h('div',{class:'dk-tools'},add,h('div',{class:'dk-favs'},favs().map(t=>{const D=WIDGETS[t];return h('button',{class:'tool',title:D.label+' hinzufügen',onclick:()=>addWidget(t)},ic(D.icon,'cat-'+D.cat),h('span',null,D.label))})));
   const snapBtn=h('button',{class:'ibtn'+(snapOn()?' on':''),title:snapOn()?'Einrasten ist an':'Einrasten ist aus','aria-label':'Einrasten','aria-pressed':String(snapOn()),onclick:()=>{APP.P.snap=!snapOn();save();buildDock();toast(snapOn()?'Einrasten an: Widgets richten sich aneinander aus':'Einrasten aus: Widgets frei verschieben')}},ic('magnet'));
   const right=h('div',{class:'dk-side'},
+    h('button',{class:'dk-stage',type:'button',title:'Bühne: nur Inhalte zeigen, alle Bedienelemente ausblenden','aria-label':'Bühne',onclick:()=>setStage(true)},ic('eye'),h('span',{class:'dk-scr-l'},'Bühne')),
     h('button',{class:'ibtn dk-lbtn',title:'Hintergrund wählen','aria-label':'Hintergrund',onclick:openBackgrounds},ic('palette'),h('span',{class:'dk-scr-l'},'Hintergrund')),
     h('button',{class:'ibtn dk-lbtn',title:'Bildschirme speichern und laden','aria-label':'Bildschirme',onclick:openScreens},ic('layers'),h('span',{class:'dk-scr-l'},'Bildschirme')),
     snapBtn,h('button',{class:'ibtn',title:'Widgets ordentlich anordnen','aria-label':'Widgets anordnen',onclick:tidy},ic('layout-dashboard')),h('span',{class:'dk-div'}),
@@ -3810,9 +3828,13 @@ function pinPad(p){const g=$('#gate');g.replaceChildren();g.classList.remove('re
   g.append(h('div',{class:'g-card',style:{width:'min(420px,100%)',justifyItems:'center',textAlign:'center'}},h('span',{class:'g-av',style:{background:AVC[p.color||0],width:'64px',height:'64px',fontSize:'26px'}},p.name.slice(0,1).toUpperCase()),h('h2',{style:{margin:0}},p.name),h('div',{class:'hint'},'PIN eingeben'),dots,padEl,h('button',{class:'btn',onclick:()=>showGate()},ic('arrow-left'),'Anderes Profil')))}
 function openProfile(p,fresh){LS.set(K_LAST,p.id);APP.guest=false;APP.pid=p.id;APP.P=Object.assign(defaultData(),LS.get(K_P+p.id,null)||{});enterApp(fresh&&!APP.P.widgets.length)}
 function startGuest(){GUEST_SND.clear();APP.guest=true;APP.pid=null;APP.P=defaultData();enterApp(true)}
-function enterApp(starter){APP.sounds=[];loadCustomSounds();$('#gate').hidden=true;$('#app').hidden=false;clearBoard();applyBg();buildDock();
+function enterApp(starter){APP.sounds=[];loadCustomSounds();$('#gate').hidden=true;$('#app').hidden=false;$('#app').classList.toggle('stage',!!APP.P.stage);clearBoard();applyBg();buildDock();
   requestAnimationFrame(()=>{if(starter){starterWidgets(APP.P);save()}APP.P.widgets=APP.P.widgets.filter(r=>WIDGETS[r.type]);APP.P.widgets.forEach(mountWidget)})}
-function lockApp(){saveNow();document.querySelector('.ov')?.remove();clearBoard();APP.P=null;APP.pid=null;APP.guest=false;showGate()}
+/* ---------- Bühne (während der Lektion) und Werkstatt (einrichten) ---------- */
+function setStage(on){if(!APP.P)return;APP.P.stage=!!on;save();const app=$('#app');app.classList.toggle('stage',!!on);document.querySelector('.pick-ov')?.remove();
+  if(on){for(const I of APP.inst.values())I.el.classList.remove('peek');toast('Bühne: Widget antippen zeigt seine Knöpfe. «Werkzeuge» unten führt zurück.',4200)}}
+document.addEventListener('click',e=>{if(e.target.closest('#stage-handle'))setStage(false)});
+function lockApp(){$('#app').classList.remove('stage');saveNow();document.querySelector('.ov')?.remove();clearBoard();APP.P=null;APP.pid=null;APP.guest=false;showGate()}
 
 /* Start */
 try{qrcode.stringToBytes=qrcode.stringToBytesFuncs['UTF-8']}catch(e){}
