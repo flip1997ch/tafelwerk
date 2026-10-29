@@ -498,7 +498,33 @@ textarea.inp{min-height:120px;resize:vertical;line-height:1.5}
 .bg-t span{background:rgba(255,255,255,.88);color:#1a2230;border-radius:6px;padding:1px 7px}
 .bg-t.on{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft)}
 
-#gate{position:fixed;inset:0;z-index:100001;display:grid;place-items:center;padding:16px;overflow:auto;background-color:#E9E7E0;background-image:radial-gradient(rgba(31,77,58,.14) 1.4px,transparent 1.6px);background-size:32px 32px}
+#gate{position:fixed;inset:0;z-index:100001;display:grid;place-items:center;padding:16px;overflow:auto;color:var(--chalk);background-color:#1F4D3A;background-image:radial-gradient(ellipse at 22% 18%,rgba(243,239,217,.09),transparent 46%),radial-gradient(ellipse at 80% 85%,rgba(243,239,217,.06),transparent 50%),radial-gradient(rgba(243,239,217,.05) 1px,transparent 1.2px);background-size:auto,auto,6px 6px}
+#gate .g-card{color:var(--ink)}
+#gate.rest{place-items:stretch;padding:0}
+.rest-wrap{display:flex;flex-direction:column;min-height:100%;box-sizing:border-box;padding:clamp(20px,4vh,48px) clamp(20px,5vw,72px)}
+.r-top{display:flex;justify-content:space-between;align-items:center;gap:16px;flex-wrap:wrap;font-size:clamp(14px,1.4vw,22px);color:rgba(243,239,217,.72)}
+.r-brand{display:flex;align-items:center;gap:12px;font-weight:800;color:var(--chalk);font-size:clamp(18px,1.7vw,28px)}
+.r-mark{width:1.5em;height:1.5em;border-radius:.4em;background:var(--chalk);display:grid;place-items:center}
+.r-mark i{width:.66em;height:.66em;border-radius:.15em;border:.12em solid #1F4D3A;box-sizing:border-box}
+.r-lock{display:flex;align-items:center;gap:8px}.r-lock .ic{width:1.1em;height:1.1em}
+.r-mid{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:.4vh;text-align:center;padding:2vh 0}
+.r-day{margin:0;font-size:clamp(24px,3vw,52px);font-weight:600;color:var(--gold)}
+.r-time{margin:0;font-weight:700;font-size:clamp(96px,18vw,300px);line-height:.92;letter-spacing:-.04em}
+.r-next{display:flex;align-items:center;gap:14px;margin:2.5vh 0 0;padding:.45em 1.1em;border-radius:999px;background:rgba(243,239,217,.1);font-size:clamp(18px,2vw,34px)}
+.r-next i{width:.45em;height:.45em;border-radius:50%;background:var(--gold);flex:none}
+.r-next b{font-weight:800}
+.r-bot{display:flex;flex-direction:column;align-items:center;gap:14px}
+.r-q{margin:0;font-size:clamp(14px,1.3vw,22px);letter-spacing:.08em;text-transform:uppercase;color:rgba(243,239,217,.68)}
+.r-people{display:flex;flex-wrap:wrap;justify-content:center;gap:14px}
+.r-p{display:flex;align-items:center;gap:14px;min-height:76px;padding:0 24px 0 12px;border:0;border-radius:22px;background:rgba(243,239,217,.1);color:var(--chalk);font-size:clamp(18px,1.5vw,26px);font-weight:600;cursor:pointer}
+.r-p:hover{background:rgba(243,239,217,.18)}
+.r-p .ic{width:18px;height:18px;opacity:.7}
+.r-av{width:52px;height:52px;border-radius:50%;display:grid;place-items:center;color:#1D2421;font-weight:800;font-size:22px;flex:none}
+.r-pn{max-width:16em;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.r-more{display:flex;gap:8px;flex-wrap:wrap;justify-content:center}
+.r-link{display:inline-flex;align-items:center;gap:8px;min-height:44px;padding:0 14px;border:0;border-radius:12px;background:transparent;color:rgba(243,239,217,.78);font-size:16px;font-weight:600;cursor:pointer}
+.r-link:hover{background:rgba(243,239,217,.1);color:var(--chalk)}
+.r-link .ic{width:18px;height:18px}
 .g-card{width:min(720px,100%);background:var(--card);border-radius:20px;box-shadow:var(--shadow);padding:28px;display:grid;gap:20px}
 .g-brand{display:flex;align-items:center;gap:14px}
 .g-mark{width:52px;height:52px;border-radius:14px;background:var(--accent);display:grid;place-items:center;color:var(--chalk)}
@@ -507,7 +533,7 @@ textarea.inp{min-height:120px;resize:vertical;line-height:1.5}
 .g-brand p{margin:2px 0 0;color:var(--muted)}
 .g-profiles{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:10px}
 .g-p{display:flex;align-items:center;gap:12px;min-height:72px;padding:12px 14px;border-radius:14px;border:1px solid var(--line);background:var(--card2);cursor:pointer;text-align:left;font-weight:700;font-size:18px}
-.g-av{width:44px;height:44px;border-radius:50%;display:grid;place-items:center;color:#fff;font-weight:700;flex:none}
+.g-av{width:44px;height:44px;border-radius:50%;display:grid;place-items:center;color:#1D2421;font-weight:700;flex:none}
 .g-p small{display:flex;align-items:center;gap:4px;font-weight:400;font-size:13px;color:var(--muted)}
 .g-p small .ic{width:14px;height:14px}
 .pad{display:grid;grid-template-columns:repeat(3,72px);gap:10px;justify-content:center}
@@ -3748,8 +3774,8 @@ function paneData(){const P=APP.P;
     h('div',{class:'field'},h('span',null,'Alles löschen'),h('div',{class:'row'},armed(h('button',{class:'btn danger'},'Alle Tafelwerk-Daten in diesem Browser löschen'),'Wirklich alles löschen?',()=>{try{Object.keys(localStorage).filter(k=>k.startsWith('tafelwerk')).forEach(k=>localStorage.removeItem(k))}catch(e){}try{IDB.db=null;indexedDB.deleteDatabase('tafelwerk')}catch(e){}APP.profiles=[];APP.pid=null;APP.P=null;APP.guest=false;clearBoard();document.querySelector('.ov')?.remove();showGate();toast('Alle Daten gelöscht')}))))}
 
 /* ============ Profilwahl ============ */
-const AVC=['#1f5fd1','#16805a','#bf5512','#7a3fc4','#0f7f8f','#b5306b'];
-function showGate(view){$('#app').hidden=true;const g=$('#gate');g.hidden=false;g.replaceChildren();const card=h('div',{class:'g-card'});g.append(card);
+const AVC=['#E9C54B','#CFE5D6','#F2B9A6','#C9D8EE','#D9CBEA','#E8DFC8'];
+function showGate(view){$('#app').hidden=true;const g=$('#gate');g.hidden=false;g.replaceChildren();g.classList.remove('rest');clearInterval(REST_T);const card=h('div',{class:'g-card'});g.append(card);
   const brand=h('div',{class:'g-brand'},h('div',{class:'g-mark'},ic('layout-grid')),h('div',null,h('h1',null,'Tafelwerk'),h('p',null,'Timer, Lärmpegel, Gruppen und mehr fürs Whiteboard. Alles bleibt auf diesem Gerät.')));
   if(view==='new'||!APP.profiles.length){const nameIn=h('input',{class:'inp',id:'g-name',placeholder:'z. B. Frau Keller oder 5b Mathe',maxlength:40});const pinIn=h('input',{class:'inp num',id:'g-pin',inputmode:'numeric',maxlength:6,type:'password',placeholder:'optional, 4 bis 6 Ziffern',autocomplete:'new-password'});
     const create=async()=>{const n=nameIn.value.trim();if(!n){nameIn.focus();toast('Bitte einen Profilnamen eingeben.');return}const pin=pinIn.value.trim();if(pin&&!/^\d{4,6}$/.test(pin)){toast('Die PIN braucht 4 bis 6 Ziffern.');return}
@@ -3758,15 +3784,31 @@ function showGate(view){$('#app').hidden=true;const g=$('#gate');g.hidden=false;
       h('div',{class:'note'},'Ein Profil pro Lehrperson. Darin liegen deine Klassen und gespeicherten Bildschirme. Mit PIN können Kinder es nicht öffnen.'),
       h('div',{class:'row'},h('button',{class:'btn pri lg',onclick:create},'Profil anlegen'),APP.profiles.length?h('button',{class:'btn lg',onclick:()=>showGate()},ic('arrow-left'),'Zurück'):h('button',{class:'btn lg',onclick:startGuest},ic('shield-check'),'Ohne Profil testen')));
     nameIn.addEventListener('keydown',e=>{if(e.key==='Enter')create()});setTimeout(()=>nameIn.focus(),50);return}
+  restScreen(g,card);return;
   card.append(brand,h('div',{class:'g-profiles'},APP.profiles.map(p=>h('button',{class:'g-p',onclick:()=>p.pin?pinPad(p):openProfile(p)},h('span',{class:'g-av',style:{background:AVC[p.color||0]}},p.name.trim().slice(0,1).toUpperCase()),h('span',{style:{minWidth:0}},h('span',{style:{display:'block',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}},p.name),p.pin?h('small',null,ic('lock'),'mit PIN'):h('small',null,'ohne PIN'))))),
     h('div',{class:'row'},h('button',{class:'btn',onclick:()=>showGate('new')},ic('plus'),'Neues Profil'),h('button',{class:'btn',onclick:startGuest},ic('shield-check'),'Gastmodus (nichts wird gespeichert)')))}
-function pinPad(p){const g=$('#gate');g.replaceChildren();let v='';const dots=h('div',{class:'dots'});const drawDots=()=>{dots.replaceChildren(...Array.from({length:Math.max(4,v.length)},(_,i)=>h('i',{class:i<v.length?'f':''})))};drawDots();
+/* ---------- Ruhebildschirm: gesperrte Tafel mit Uhr, Datum, nächster Lektion und Profilwahl ---------- */
+const K_LAST='tafelwerk.v1.last';let REST_T=null;
+function nextLessonText(){const pid=LS.get(K_LAST,null);const P=pid&&LS.get(K_P+pid,null);if(!P)return'';const L=parseTT(P.timetable||TT_DEFAULT);if(!L.length)return'';
+  const n=new Date();if(n.getDay()===0||n.getDay()===6)return'';const now=n.getHours()*60+n.getMinutes();const cur=L.find(x=>now>=x.a&&now<x.b),nxt=L.find(x=>x.a>now);
+  if(cur)return`Jetzt: <b>${txEsc(cur.label)}</b> bis ${cur.to}`;if(nxt)return`Nächste Lektion: <b>${txEsc(nxt.label)}</b> um ${nxt.from}`;return''}
+function restScreen(g,card){card.remove();g.classList.add('rest');clearInterval(REST_T);
+  const day=h('p',{class:'r-day'}),time=h('p',{class:'r-time num'}),next=h('p',{class:'r-next',hidden:true});
+  const tick=()=>{if(!g.isConnected||g.hidden||!g.classList.contains('rest')){clearInterval(REST_T);return}const n=new Date();day.textContent=`${WD[n.getDay()]}, ${n.getDate()}. ${MO[n.getMonth()]}`;time.textContent=`${pad2(n.getHours())}:${pad2(n.getMinutes())}`;
+    const t=nextLessonText();next.hidden=!t;if(t)next.innerHTML='<i></i><span>'+t+'</span>'};tick();REST_T=setInterval(tick,5000);
+  g.append(h('div',{class:'rest-wrap'},
+    h('div',{class:'r-top'},h('span',{class:'r-brand'},h('span',{class:'r-mark'},h('i')),'Tafelwerk'),h('span',{class:'r-lock'},ic('lock'),'Gesperrt · Daten bleiben auf diesem Gerät')),
+    h('div',{class:'r-mid'},day,time,next),
+    h('div',{class:'r-bot'},h('p',{class:'r-q'},'Wer unterrichtet?'),
+      h('div',{class:'r-people'},APP.profiles.map(p=>h('button',{class:'r-p',type:'button',onclick:()=>p.pin?pinPad(p):openProfile(p)},h('span',{class:'r-av',style:{background:AVC[p.color||0]}},p.name.trim().slice(0,1).toUpperCase()),h('span',{class:'r-pn'},p.name),p.pin?ic('lock'):null))),
+      h('div',{class:'r-more'},h('button',{class:'r-link',type:'button',onclick:()=>showGate('new')},ic('plus'),'Neues Profil'),h('button',{class:'r-link',type:'button',onclick:startGuest},ic('shield-check'),'Gastmodus')))))}
+function pinPad(p){const g=$('#gate');g.replaceChildren();g.classList.remove('rest');clearInterval(REST_T);let v='';const dots=h('div',{class:'dots'});const drawDots=()=>{dots.replaceChildren(...Array.from({length:Math.max(4,v.length)},(_,i)=>h('i',{class:i<v.length?'f':''})))};drawDots();
   const tryIt=async()=>{if(v.length<4){toast('Mindestens 4 Ziffern');return}if(await hashPin(v,p.salt)===p.pin){openProfile(p)}else{v='';dots.classList.add('err');drawDots();toast('Falsche PIN');setTimeout(()=>dots.classList.remove('err'),900)}};
   const press=k=>{if(k==='←')v=v.slice(0,-1);else if(k==='OK')return tryIt();else if(v.length<6)v+=k;drawDots();if(v.length===6)tryIt()};
   const padEl=h('div',{class:'pad'},['1','2','3','4','5','6','7','8','9','←','0','OK'].map(k=>h('button',{onclick:()=>press(k),'aria-label':k==='←'?'Löschen':k==='OK'?'Bestätigen':k},k)));
   const key=e=>{if(!g.contains(padEl)){document.removeEventListener('keydown',key);return}if(/^\d$/.test(e.key))press(e.key);else if(e.key==='Backspace')press('←');else if(e.key==='Enter')press('OK');else if(e.key==='Escape')showGate()};document.addEventListener('keydown',key);
   g.append(h('div',{class:'g-card',style:{width:'min(420px,100%)',justifyItems:'center',textAlign:'center'}},h('span',{class:'g-av',style:{background:AVC[p.color||0],width:'64px',height:'64px',fontSize:'26px'}},p.name.slice(0,1).toUpperCase()),h('h2',{style:{margin:0}},p.name),h('div',{class:'hint'},'PIN eingeben'),dots,padEl,h('button',{class:'btn',onclick:()=>showGate()},ic('arrow-left'),'Anderes Profil')))}
-function openProfile(p,fresh){APP.guest=false;APP.pid=p.id;APP.P=Object.assign(defaultData(),LS.get(K_P+p.id,null)||{});enterApp(fresh&&!APP.P.widgets.length)}
+function openProfile(p,fresh){LS.set(K_LAST,p.id);APP.guest=false;APP.pid=p.id;APP.P=Object.assign(defaultData(),LS.get(K_P+p.id,null)||{});enterApp(fresh&&!APP.P.widgets.length)}
 function startGuest(){GUEST_SND.clear();APP.guest=true;APP.pid=null;APP.P=defaultData();enterApp(true)}
 function enterApp(starter){APP.sounds=[];loadCustomSounds();$('#gate').hidden=true;$('#app').hidden=false;clearBoard();applyBg();buildDock();
   requestAnimationFrame(()=>{if(starter){starterWidgets(APP.P);save()}APP.P.widgets=APP.P.widgets.filter(r=>WIDGETS[r.type]);APP.P.widgets.forEach(mountWidget)})}
