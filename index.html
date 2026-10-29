@@ -303,6 +303,14 @@ textarea.inp{min-height:120px;resize:vertical;line-height:1.5}
 @container (max-height:150px){.dc-sum{display:none}.dc{grid-template-rows:minmax(0,1fr)}}
 @container (max-height:230px){.cd .sub,.cal .kw{display:none}}
 
+/* Ambient-Rand und Fokus */
+#ambient{position:fixed;inset:0;width:100vw;height:100vh;pointer-events:none;z-index:99996;opacity:0;transition:opacity .6s}
+#ambient.on{opacity:1}
+#ambient rect{fill:none;stroke:var(--gold);stroke-width:10;stroke-linecap:round;stroke-dasharray:1 1;transition:stroke-dasharray .25s linear,stroke .4s}
+#ambient.last rect{stroke:var(--bad)}
+#focus-dim{position:fixed;inset:0;z-index:99980;background:rgba(29,36,33,.55);backdrop-filter:blur(3px)}
+.w.focus .rz{display:none}
+.w.focus{left:3%!important;top:3%!important;width:94%!important;height:94%!important;z-index:99985!important;transition:left .25s,top .25s,width .25s,height .25s}
 /* Bühne */
 #stage-handle{display:none}
 #app.stage{grid-template-rows:minmax(0,1fr) 0}
@@ -566,6 +574,8 @@ textarea.inp{min-height:120px;resize:vertical;line-height:1.5}
 <div id="app" hidden>
   <main id="board" aria-label="Tafel"></main>
   <nav id="dock" aria-label="Werkzeuge"></nav>
+  <svg id="ambient" aria-hidden="true" preserveAspectRatio="none"><rect pathLength="1"/></svg>
+  <div id="focus-dim" hidden></div>
   <button type="button" id="stage-handle" aria-label="Werkzeuge zeigen (zurück in die Werkstatt)" title="Werkzeuge zeigen"><i></i><span>Werkzeuge</span></button>
 </div>
 <div id="gate"></div>
@@ -3031,13 +3041,14 @@ function mountWidget(rec){const D=WIDGETS[rec.type];if(!D)return;const board=$('
     stopAlarm(){el.classList.remove('ring');clearTimeout(I._rt2);if(I._snd){I._snd();I._snd=null}},
     refresh(){if(I.cleanup){try{I.cleanup()}catch(e){}}I.cleanup=null;body.replaceChildren();I.cfgOpen=false;I.setTitle(D.label);const r=D.mount(I);if(typeof r==='function')I.cleanup=r},
     openCfg(){if(I.cfgOpen){I._cfgDone();return}I.cfgOpen=true;const panel=h('div',{class:'cfg'});const done=()=>{if(D.keepAlive){panel.remove();I.cfgOpen=false;if(I.applied)I.applied()}else I.refresh();save()};I._cfgDone=done;if(D.settings)D.settings(I,panel,done);panel.append(colorField(I),h('div',{class:'foot'},h('button',{class:'btn pri',onclick:done},ic('check'),'Fertig')));body.append(panel);const f=panel.querySelector('input,textarea,select');if(f)f.focus()},
-    destroy(){clearTimeout(I._peek);I.stopAlarm();if(I.cleanup){try{I.cleanup()}catch(e){}}if(I.ro)I.ro.disconnect();el.remove();APP.inst.delete(rec.id)}};
+    destroy(){clearTimeout(I._peek);if(APP.focus===I)toggleFocus(I);I.stopAlarm();if(I.cleanup){try{I.cleanup()}catch(e){}}if(I.ro)I.ro.disconnect();el.remove();APP.inst.delete(rec.id)}};
   if(D.edit){I.editBtn=h('button',{class:'ibtn','aria-label':'Bearbeiten',title:'Bearbeiten',onclick:()=>I.toggleEdit&&I.toggleEdit()},ic('pencil-line'));btns.push(I.editBtn)}
   btns.push(h('button',{class:'ibtn','aria-label':'Einstellungen',title:'Einstellungen',onclick:()=>I.openCfg()},ic('settings')));
-  btns.push(h('button',{class:'ibtn','aria-label':'Schliessen',title:'Schliessen',onclick:()=>removeWidget(rec.id)},ic('x')));
+  btns.push(h('button',{class:'ibtn','aria-label':'Schliessen',title:'Schliessen',onclick:()=>{if(APP.focus===I)toggleFocus(I);else removeWidget(rec.id)}},ic('x')));
   const head=h('div',{class:'wh',title:'Zum Verschieben ziehen'},title,btns);
   const rz=h('div',{class:'rz','aria-hidden':'true'});
   const el=h('section',{class:'w','aria-label':D.label},head,body,rz);I.el=el;
+  if(!D.edit&&rec.type!=='draw'){let lt=0,lx=0,ly=0;el.addEventListener('pointerup',e=>{if(e.target.closest('button,input,textarea,select,a,label,canvas,iframe,video,[contenteditable],.wh,.rz,.cfg')){lt=0;return}const t=e.timeStamp;if(t-lt<380&&Math.hypot(e.clientX-lx,e.clientY-ly)<30){lt=0;toggleFocus(I)}else{lt=t;lx=e.clientX;ly=e.clientY}})}
   el.addEventListener('pointerdown',()=>{front(I);if(el.classList.contains('ring'))I.stopAlarm();if(APP.P&&APP.P.stage){el.classList.add('peek');clearTimeout(I._peek);I._peek=setTimeout(()=>{if(!I.cfgOpen&&!el.matches(':focus-within'))el.classList.remove('peek');else I._peek=setTimeout(()=>el.classList.remove('peek'),4000)},4000)}},true);
   place(I);applyWColor(I);board.append(el);APP.inst.set(rec.id,I);
   dragify(head,I,'move');dragify(rz,I,'size');
@@ -3831,6 +3842,19 @@ function startGuest(){GUEST_SND.clear();APP.guest=true;APP.pid=null;APP.P=defaul
 function enterApp(starter){APP.sounds=[];loadCustomSounds();$('#gate').hidden=true;$('#app').hidden=false;$('#app').classList.toggle('stage',!!APP.P.stage);clearBoard();applyBg();buildDock();
   requestAnimationFrame(()=>{if(starter){starterWidgets(APP.P);save()}APP.P.widgets=APP.P.widgets.filter(r=>WIDGETS[r.type]);APP.P.widgets.forEach(mountWidget)})}
 /* ---------- Bühne (während der Lektion) und Werkstatt (einrichten) ---------- */
+/* ---------- Fokus: Doppeltipp holt ein Widget gross nach vorne ---------- */
+function toggleFocus(I){const dim=$('#focus-dim');try{getSelection().removeAllRanges()}catch(e){}
+  if(APP.focus&&APP.focus!==I)toggleFocus(APP.focus);
+  if(APP.focus===I){I.el.classList.remove('focus');APP.focus=null;dim.hidden=true;document.removeEventListener('keydown',focusKey);return}
+  APP.focus=I;I.el.classList.add('focus');dim.hidden=false;document.addEventListener('keydown',focusKey)}
+function focusKey(e){if(e.key==='Escape'&&APP.focus&&!APP.focus.cfgOpen)toggleFocus(APP.focus)}
+document.addEventListener('pointerdown',e=>{if(e.target.id==='focus-dim'&&APP.focus)toggleFocus(APP.focus)});
+/* ---------- Ambient-Rand: letzte Minute eines laufenden Timers am Bildschirmrand ---------- */
+setInterval(()=>{const svg=$('#ambient');if(!svg)return;let best=Infinity;
+  if(APP.P&&!$('#app').hidden)for(const I of APP.inst.values()){const t=I.rec.type;if(t!=='timer'&&t!=='visualtimer')continue;const d=I.data;if(!d.running)continue;const r=Math.max(0,d.endAt-Date.now());if(r<best)best=r}
+  const on=best<=60000&&best>0;svg.classList.toggle('on',on);if(!on)return;
+  const W=innerWidth,H=innerHeight;svg.setAttribute('viewBox',`0 0 ${W} ${H}`);const rc=svg.firstElementChild;rc.setAttribute('x',5);rc.setAttribute('y',5);rc.setAttribute('width',W-10);rc.setAttribute('height',H-10);rc.setAttribute('rx',14);
+  const p=best/60000;rc.style.strokeDasharray=p.toFixed(4)+' 1';svg.classList.toggle('last',best<=10000)},250);
 function setStage(on){if(!APP.P)return;APP.P.stage=!!on;save();const app=$('#app');app.classList.toggle('stage',!!on);document.querySelector('.pick-ov')?.remove();
   if(on){for(const I of APP.inst.values())I.el.classList.remove('peek');toast('Bühne: Widget antippen zeigt seine Knöpfe. «Werkzeuge» unten führt zurück.',4200)}}
 document.addEventListener('click',e=>{if(e.target.closest('#stage-handle'))setStage(false)});
