@@ -274,8 +274,8 @@ textarea.inp{min-height:120px;resize:vertical;line-height:1.5}
 .pl-o i{position:absolute;inset:0 auto 0 0;background:var(--accent-soft);z-index:0;transition:width .3s}
 .pl-o span,.pl-o b{position:relative;z-index:1}
 .dc{position:absolute;inset:0;display:grid;grid-template-rows:minmax(0,1fr) auto;gap:6px;padding:10px}
-.dc-row{display:flex;flex-wrap:wrap;gap:4%;justify-content:center;align-content:center;cursor:pointer;border:0;background:transparent}
-.die{width:clamp(36px,min(26cqw,52cqh),180px);aspect-ratio:1;border-radius:18%;background:var(--card);border:3px solid var(--ink);display:grid;grid-template:repeat(3,1fr)/repeat(3,1fr);padding:clamp(6px,3cqmin,18px);margin:6px}
+.dc-row{display:grid;grid-template-columns:repeat(var(--c,2),auto);gap:clamp(6px,3cqmin,20px);justify-content:center;align-content:center;min-height:0;cursor:pointer;border:0;background:transparent}
+.die{width:clamp(28px,min(calc(72cqw / var(--c,2)),calc(52cqh / var(--r,1))),180px);aspect-ratio:1;border-radius:18%;background:var(--card);border:3px solid var(--ink);display:grid;grid-template:repeat(3,1fr)/repeat(3,1fr);padding:clamp(5px,3cqmin,18px);margin:0}
 .die i{border-radius:50%;background:var(--ink);width:72%;aspect-ratio:1;place-self:center;visibility:hidden}
 .die i.v{visibility:visible}
 .die.roll{animation:roll .5s ease-out}
@@ -329,6 +329,19 @@ textarea.inp{min-height:120px;resize:vertical;line-height:1.5}
 #app.stage #stage-attn{display:grid;place-items:center;position:fixed;right:14px;bottom:10px;z-index:99995;width:48px;height:48px;border:0;border-radius:50%;background:rgba(233,197,75,.55);color:#1D2421;cursor:pointer;opacity:.8}
 #app.stage #stage-attn:hover{opacity:1;background:var(--gold)}
 #stage-attn .ic{width:22px;height:22px}
+/* Mini-Leiste */
+#mbar{position:absolute;left:0;top:0;z-index:99970;display:flex;align-items:center;gap:4px;padding:6px;background:#1D2421;color:#F3EFD9;border-radius:18px;box-shadow:0 14px 30px -12px rgba(0,0,0,.5);white-space:nowrap;will-change:transform}
+#mbar[hidden]{display:none}
+#mbar .mb-b{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-width:48px;height:48px;padding:0 14px;border:0;border-radius:12px;background:rgba(243,239,217,.1);color:inherit;font-weight:700;font-size:17px;cursor:pointer}
+#mbar .mb-b:hover{background:rgba(243,239,217,.2)}
+#mbar .mb-b.mb-i{background:transparent;padding:0}
+#mbar .mb-b.mb-i:hover{background:rgba(243,239,217,.12)}
+#mbar .mb-b .ic{width:22px;height:22px}
+#mbar .mb-lbl{padding:0 8px 0 10px;font-size:16px;color:rgba(243,239,217,.75)}
+#mbar .mb-lbl b{color:#F3EFD9;font-size:18px}
+#mbar .mb-div{width:1px;height:28px;background:rgba(243,239,217,.2);margin:0 4px}
+#mbar .mb-sw{width:26px;height:26px;border-radius:50%;box-shadow:0 0 0 3px #F3EFD9}
+.mb-pop{position:absolute;z-index:99971;max-width:min(420px,calc(100% - 16px));padding:14px;background:var(--card);color:var(--ink);border-radius:18px;box-shadow:var(--shadow),0 0 0 1px var(--line)}
 /* Bühne */
 #stage-handle{display:none}
 #app.stage{grid-template-rows:minmax(0,1fr) 0}
@@ -595,6 +608,7 @@ textarea.inp{min-height:120px;resize:vertical;line-height:1.5}
   <nav id="dock" aria-label="Werkzeuge"></nav>
   <svg id="ambient" aria-hidden="true" preserveAspectRatio="none"><rect pathLength="1"/></svg>
   <div id="focus-dim" hidden></div>
+  <div id="mbar" role="toolbar" aria-label="Widget-Schnellaktionen" hidden></div>
   <div id="attn" hidden role="alertdialog" aria-live="assertive" aria-label="Aufmerksamkeit"><div class="at-in"><span class="at-ic"></span><p class="at-msg"></p><p class="at-hint">Antippen zum Beenden</p></div><div class="at-pick"></div></div>
   <button type="button" id="stage-attn" aria-label="Aufmerksamkeit" title="Aufmerksamkeit (Taste A)"></button>
   <button type="button" id="stage-handle" aria-label="Werkzeuge zeigen (zurück in die Werkstatt)" title="Werkzeuge zeigen"><i></i><span>Werkzeuge</span></button>
@@ -3062,8 +3076,8 @@ function mountWidget(rec){const D=WIDGETS[rec.type];if(!D)return;const board=$('
     alarm(){el.classList.add('ring');if(I._snd)I._snd();const d=I.data;I._snd=playSound(d.sound||APP.P.defaultSound||'gong',d.vol,d.rep==null?3:d.rep);clearTimeout(I._rt2);I._rt2=setTimeout(()=>I.stopAlarm(),120000)},
     stopAlarm(){el.classList.remove('ring');clearTimeout(I._rt2);if(I._snd){I._snd();I._snd=null}},
     refresh(){if(I.cleanup){try{I.cleanup()}catch(e){}}I.cleanup=null;body.replaceChildren();I.cfgOpen=false;I.setTitle(D.label);const r=D.mount(I);if(typeof r==='function')I.cleanup=r},
-    openCfg(){if(I.cfgOpen){I._cfgDone();return}I.cfgOpen=true;const panel=h('div',{class:'cfg'});const done=()=>{if(D.keepAlive){panel.remove();I.cfgOpen=false;if(I.applied)I.applied()}else I.refresh();save()};I._cfgDone=done;if(D.settings)D.settings(I,panel,done);panel.append(colorField(I),h('div',{class:'foot'},h('button',{class:'btn pri',onclick:done},ic('check'),'Fertig')));body.append(panel);const f=panel.querySelector('input,textarea,select');if(f)f.focus()},
-    destroy(){clearTimeout(I._peek);if(APP.focus===I)toggleFocus(I);I.stopAlarm();if(I.cleanup){try{I.cleanup()}catch(e){}}if(I.ro)I.ro.disconnect();el.remove();APP.inst.delete(rec.id)}};
+    openCfg(){if(I.cfgOpen){I._cfgDone();return}if(APP.mbar===I)hideMbar();I.cfgOpen=true;const panel=h('div',{class:'cfg'});const done=()=>{if(D.keepAlive){panel.remove();I.cfgOpen=false;if(I.applied)I.applied()}else I.refresh();save()};I._cfgDone=done;if(D.settings)D.settings(I,panel,done);panel.append(colorField(I),h('div',{class:'foot'},h('button',{class:'btn pri',onclick:done},ic('check'),'Fertig')));body.append(panel);const f=panel.querySelector('input,textarea,select');if(f)f.focus()},
+    destroy(){clearTimeout(I._peek);if(APP.mbar===I)hideMbar();if(APP.focus===I)toggleFocus(I);I.stopAlarm();if(I.cleanup){try{I.cleanup()}catch(e){}}if(I.ro)I.ro.disconnect();el.remove();APP.inst.delete(rec.id)}};
   if(D.edit){I.editBtn=h('button',{class:'ibtn','aria-label':'Bearbeiten',title:'Bearbeiten',onclick:()=>I.toggleEdit&&I.toggleEdit()},ic('pencil-line'));btns.push(I.editBtn)}
   btns.push(h('button',{class:'ibtn','aria-label':'Einstellungen',title:'Einstellungen',onclick:()=>I.openCfg()},ic('settings')));
   btns.push(h('button',{class:'ibtn','aria-label':'Schliessen',title:'Schliessen',onclick:()=>{if(APP.focus===I)toggleFocus(I);else removeWidget(rec.id)}},ic('x')));
@@ -3071,6 +3085,7 @@ function mountWidget(rec){const D=WIDGETS[rec.type];if(!D)return;const board=$('
   const rz=h('div',{class:'rz','aria-hidden':'true'});
   const el=h('section',{class:'w','aria-label':D.label},head,body,rz);I.el=el;
   if(!D.edit&&rec.type!=='draw'){let lt=0,lx=0,ly=0;el.addEventListener('pointerup',e=>{if(e.target.closest('button,input,textarea,select,a,label,canvas,iframe,video,[contenteditable],.wh,.rz,.cfg')){lt=0;return}const t=e.timeStamp;if(t-lt<380&&Math.hypot(e.clientX-lx,e.clientY-ly)<30){lt=0;toggleFocus(I)}else{lt=t;lx=e.clientX;ly=e.clientY}})}
+  el.addEventListener('pointerup',e=>{if(e.target.closest('.cfg'))return;setTimeout(()=>showMbar(I),0)});
   el.addEventListener('pointerdown',()=>{front(I);if(el.classList.contains('ring'))I.stopAlarm();if(APP.P&&APP.P.stage){el.classList.add('peek');clearTimeout(I._peek);I._peek=setTimeout(()=>{if(!I.cfgOpen&&!el.matches(':focus-within'))el.classList.remove('peek');else I._peek=setTimeout(()=>el.classList.remove('peek'),4000)},4000)}},true);
   place(I);applyWColor(I);board.append(el);APP.inst.set(rec.id,I);
   dragify(head,I,'move');dragify(rz,I,'size');
@@ -3420,7 +3435,7 @@ const PIPS={1:[4],2:[0,8],3:[0,4,8],4:[0,2,6,8],5:[0,2,4,6,8],6:[0,2,3,5,6,8]};
 def('dice',{label:'Würfel',icon:'dices',cat:'klasse',w:360,h:260,minW:200,minH:180,init:()=>({n:2,faces:[3,5]}),
   settings(I,p){const d=I.data;p.append(h('div',{class:'field'},h('span',null,'Anzahl Würfel'),h('div',{class:'chips',style:{justifyContent:'flex-start'}},[1,2,3,4,5,6].map(k=>h('button',{class:'chip'+(d.n===k?' on':''),onclick:e=>{d.n=k;d.faces=Array.from({length:k},(_,i)=>d.faces[i]||1+Math.floor(Math.random()*6));[...e.target.parentNode.children].forEach(b=>b.classList.toggle('on',b===e.target))}},k)))))},
   mount(I){const d=I.data;const row=h('button',{class:'dc-row','aria-label':'Würfeln'});const sum=h('div',{class:'dc-sum num'});
-    const draw=(roll)=>{row.replaceChildren(...d.faces.map(f=>{const die=h('div',{class:'die'+(roll?' roll':'')});for(let i=0;i<9;i++)die.append(h('i',{class:PIPS[f].includes(i)?'v':''}));return die}));sum.textContent=d.faces.length>1?`Summe: ${d.faces.reduce((a,b)=>a+b,0)}`:'Antippen zum Würfeln'};
+    const draw=(roll)=>{const k=d.faces.length,c=k<=3?k:Math.ceil(k/2);row.style.setProperty('--c',c);row.style.setProperty('--r',k<=3?1:2);row.style.maxWidth='100%';row.replaceChildren(...d.faces.map(f=>{const die=h('div',{class:'die'+(roll?' roll':'')});for(let i=0;i<9;i++)die.append(h('i',{class:PIPS[f].includes(i)?'v':''}));return die}));sum.textContent=d.faces.length>1?`Summe: ${d.faces.reduce((a,b)=>a+b,0)}`:'Antippen zum Würfeln'};
     row.addEventListener('click',()=>{d.faces=d.faces.map(()=>1+Math.floor(Math.random()*6));draw(true);save()});
     I.body.append(h('div',{class:'dc'},row,sum));draw(false)}});
 
@@ -3867,7 +3882,7 @@ function enterApp(starter){APP.sounds=[];loadCustomSounds();$('#gate').hidden=tr
   requestAnimationFrame(()=>{if(starter){starterWidgets(APP.P);save()}APP.P.widgets=APP.P.widgets.filter(r=>WIDGETS[r.type]);APP.P.widgets.forEach(mountWidget)})}
 /* ---------- Bühne (während der Lektion) und Werkstatt (einrichten) ---------- */
 /* ---------- Fokus: Doppeltipp holt ein Widget gross nach vorne ---------- */
-function toggleFocus(I){const dim=$('#focus-dim');try{getSelection().removeAllRanges()}catch(e){}
+function toggleFocus(I){hideMbar();const dim=$('#focus-dim');try{getSelection().removeAllRanges()}catch(e){}
   if(APP.focus&&APP.focus!==I)toggleFocus(APP.focus);
   if(APP.focus===I){I.el.classList.remove('focus');APP.focus=null;dim.hidden=true;document.removeEventListener('keydown',focusKey);return}
   APP.focus=I;I.el.classList.add('focus');dim.hidden=false;document.addEventListener('keydown',focusKey)}
@@ -3895,10 +3910,49 @@ document.addEventListener('keydown',e=>{if($('#app').hidden||!APP.P)return;const
 /* ---------- Raum dunkel ---------- */
 function applyTheme(){const d=APP.P&&APP.P.theme==='dark';if(d)document.documentElement.dataset.theme='dark';else document.documentElement.removeAttribute('data-theme');const b=$('.dk-theme');if(b){b.replaceChildren(ic(d?'sun':'moon'));b.title=d?'Raum hell: helle Darstellung':'Raum dunkel: dunkle Darstellung für abgedunkelte Räume';b.setAttribute('aria-pressed',d?'true':'false')}}
 function toggleTheme(){APP.P.theme=APP.P.theme==='dark'?'light':'dark';save();applyTheme()}
-function setStage(on){if(!APP.P)return;APP.P.stage=!!on;save();const app=$('#app');app.classList.toggle('stage',!!on);document.querySelector('.pick-ov')?.remove();
+/* ---------- Mini-Leiste direkt am Widget ---------- */
+function nudgeTimer(I,m){const d=I.data;if(d.running){d.endAt=Math.max(Date.now()+1000,d.endAt+m*60000)}else{const base=d.rem>0?d.rem:d.dur;const v=clamp(base+m*60000,60000,5999000);d.dur=v;d.rem=v}I.stopAlarm();save();I.refresh()}
+const QUICK={
+  timer:I=>[['−1 Min',null,()=>nudgeTimer(I,-1)],['+1 Min',null,()=>nudgeTimer(I,1)]],
+  visualtimer:I=>[['−1 Min',null,()=>nudgeTimer(I,-1)],['+1 Min',null,()=>nudgeTimer(I,1)]],
+  soundlevel:I=>[['Grenze',null,null,()=>I.data.thr+' %'],['−',null,()=>{I.data.thr=clamp(I.data.thr-5,20,95);I.applied&&I.applied();save()},null,'Grenze tiefer (strenger)'],['+',null,()=>{I.data.thr=clamp(I.data.thr+5,20,95);I.applied&&I.applied();save()},null,'Grenze höher (lockerer)']],
+  dice:I=>[['Würfel',null,null,()=>String(I.data.n)],['−',null,()=>{const d=I.data;if(d.n>1){d.n--;d.faces=d.faces.slice(0,d.n);save();I.refresh()}},null,'Ein Würfel weniger'],['+',null,()=>{const d=I.data;if(d.n<6){d.n++;d.faces.push(1+Math.floor(Math.random()*6));save();I.refresh()}},null,'Ein Würfel mehr']],
+  scoreboard:I=>[['Alle auf 0','rotate-ccw',()=>{I.data.teams.forEach(t=>t.s=0);save();I.refresh()}]]
+};
+function showMbar(I){const bar=$('#mbar');if(!bar||!APP.P||APP.P.stage||APP.focus||I.cfgOpen||!I.el.isConnected){hideMbar();return}
+  if(APP.mbar===I&&!bar.hidden){placeMbar();return}
+  APP.mbar=I;const D=WIDGETS[I.rec.type];const items=[];
+  const q=QUICK[I.rec.type]?QUICK[I.rec.type](I):[];
+  for(const [l,icn,fn,live,aria] of q){if(!fn){const v=h('b',{class:'num'});const upd=()=>v.textContent=live();upd();items.push(h('span',{class:'mb-lbl'},l+' ',v));bar._live=upd;continue}
+    items.push(h('button',{type:'button',class:'mb-b','aria-label':aria||l,title:aria||l,onclick:e=>{e.stopPropagation();fn();bar._live&&bar._live();setTimeout(placeMbar,0)}},icn?ic(icn):null,icn&&l.length>3?h('span',null,l):(icn?null:l)))}
+  if(items.length)items.push(h('i',{class:'mb-div'}));
+  const sw=h('span',{class:'mb-sw'});sw.style.background=I.rec.color||'var(--card)';
+  items.push(h('button',{type:'button',class:'mb-b mb-i','aria-label':'Farbe',title:'Farbe und Deckkraft',onclick:e=>{e.stopPropagation();toggleMbPop(I,e.currentTarget)}},sw));
+  items.push(h('button',{type:'button',class:'mb-b mb-i','aria-label':'Gross zeigen',title:'Gross zeigen (Doppeltipp)',onclick:e=>{e.stopPropagation();toggleFocus(I)}},ic('maximize')));
+  items.push(h('button',{type:'button',class:'mb-b mb-i','aria-label':'Duplizieren',title:'Duplizieren',onclick:e=>{e.stopPropagation();dupWidget(I)}},ic('copy')));
+  if(D.settings||true)items.push(h('button',{type:'button',class:'mb-b mb-i','aria-label':'Weitere Einstellungen',title:'Weitere Einstellungen',onclick:e=>{e.stopPropagation();hideMbar();I.openCfg()}},ic('ellipsis')));
+  bar.replaceChildren(...items);bar.hidden=false;placeMbar();
+  cancelAnimationFrame(APP.mbRaf);const loop=()=>{if(bar.hidden)return;placeMbar();APP.mbRaf=requestAnimationFrame(loop)};APP.mbRaf=requestAnimationFrame(loop)}
+function placeMbar(){const bar=$('#mbar'),I=APP.mbar;if(!bar||bar.hidden||!I)return;if(!I.el.isConnected||I.cfgOpen||APP.focus||(APP.P&&APP.P.stage)){hideMbar();return}
+  const B=$('#board').getBoundingClientRect(),r=I.el.getBoundingClientRect(),bw=bar.offsetWidth,bh=bar.offsetHeight;
+  let x=r.left-B.left+r.width/2-bw/2;x=clamp(x,8,B.width-bw-8);let y=r.top-B.top-bh-10;if(y<8)y=r.bottom-B.top+10;if(y+bh>B.height-8)y=Math.max(8,r.top-B.top+8);
+  bar.style.transform=`translate(${Math.round(x)}px,${Math.round(y)}px)`}
+function hideMbar(){const bar=$('#mbar');if(bar){bar.hidden=true;bar.replaceChildren();bar._live=null}document.querySelector('.mb-pop')?.remove();APP.mbar=null;cancelAnimationFrame(APP.mbRaf)}
+function toggleMbPop(I,anchor){const old=document.querySelector('.mb-pop');if(old){old.remove();return}
+  const pop=h('div',{class:'mb-pop',role:'dialog','aria-label':'Farbe'},colorField(I));$('#board').append(pop);
+  const B=$('#board').getBoundingClientRect(),a=anchor.getBoundingClientRect();const pw=pop.offsetWidth,ph=pop.offsetHeight;
+  let x=clamp(a.left-B.left+a.width/2-pw/2,8,B.width-pw-8),y=a.bottom-B.top+10;if(y+ph>B.height-8)y=a.top-B.top-ph-10;pop.style.left=x+'px';pop.style.top=Math.max(8,y)+'px';
+  const obs=new MutationObserver(()=>{const sw=document.querySelector('#mbar .mb-sw');if(sw)sw.style.background=I.rec.color||'var(--card)'});obs.observe(pop,{subtree:true,childList:true})}
+function dupWidget(I){const r=I.rec,B=$('#board').getBoundingClientRect();const rec=JSON.parse(JSON.stringify(r));rec.id=uid();rec.z=++APP.P.z;
+  if(rec.type==='timer'||rec.type==='visualtimer'){rec.data.running=false;rec.data.rem=rec.data.dur}
+  const sp=typeof freeSpot==='function'?freeSpot(rec.w,rec.h):null;if(sp){rec.x=sp.x;rec.y=sp.y}else{rec.x=clamp(r.x+28,8,B.width-rec.w-8);rec.y=clamp(r.y+28,8,B.height-rec.h-8)}
+  APP.P.widgets.push(rec);mountWidget(rec);save();const N=APP.inst.get(rec.id);if(N)showMbar(N);toast('Kopie erstellt')}
+document.addEventListener('pointerdown',e=>{if(!APP.mbar)return;if(e.target.closest('#mbar,.mb-pop'))return;if(APP.mbar.el.contains(e.target))return;if(e.target.closest('.w'))return;hideMbar()},true);
+document.addEventListener('keydown',e=>{if(e.key==='Escape'&&APP.mbar&&!document.querySelector('.ov'))hideMbar()});
+function setStage(on){if(!APP.P)return;hideMbar();APP.P.stage=!!on;save();const app=$('#app');app.classList.toggle('stage',!!on);document.querySelector('.pick-ov')?.remove();
   if(on){for(const I of APP.inst.values())I.el.classList.remove('peek');toast('Bühne: Widget antippen zeigt seine Knöpfe. «Werkzeuge» unten führt zurück.',4200)}}
 document.addEventListener('click',e=>{if(e.target.closest('#stage-handle'))setStage(false)});
-function lockApp(){document.documentElement.removeAttribute('data-theme');endAttention();$('#app').classList.remove('stage');saveNow();document.querySelector('.ov')?.remove();clearBoard();APP.P=null;APP.pid=null;APP.guest=false;showGate()}
+function lockApp(){hideMbar();document.documentElement.removeAttribute('data-theme');endAttention();$('#app').classList.remove('stage');saveNow();document.querySelector('.ov')?.remove();clearBoard();APP.P=null;APP.pid=null;APP.guest=false;showGate()}
 
 /* Start */
 try{qrcode.stringToBytes=qrcode.stringToBytesFuncs['UTF-8']}catch(e){}
