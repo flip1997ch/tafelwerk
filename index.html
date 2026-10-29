@@ -28,16 +28,15 @@
   --r:22px;
   color-scheme:light;
 }
-@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
-  --ink:#e7ebf3; --muted:#a3adc0; --line:#323b4d; --card:#1b212d; --card2:#252d3b; --dock:#151a23;
-  --accent:#6f9cf2; --accent-ink:#0d1422; --accent-soft:#22324f;
-  --zeit:#7ea6f4; --klasse:#4cc08d; --inhalt:#f0935a;
-  --shadow:0 12px 32px rgba(0,0,0,.45),0 2px 6px rgba(0,0,0,.3); color-scheme:dark}}
 :root[data-theme="dark"]{
-  --ink:#e7ebf3; --muted:#a3adc0; --line:#323b4d; --card:#1b212d; --card2:#252d3b; --dock:#151a23;
-  --accent:#6f9cf2; --accent-ink:#0d1422; --accent-soft:#22324f;
-  --zeit:#7ea6f4; --klasse:#4cc08d; --inhalt:#f0935a;
-  --shadow:0 12px 32px rgba(0,0,0,.45),0 2px 6px rgba(0,0,0,.3); color-scheme:dark}
+  --ink:#EDEAD8; --muted:#AEB5AE; --line:#34403A; --card:#1B2420; --card2:#25302A; --dock:#1B2420;
+  --accent:#8FCFA8; --accent-ink:#0F2219; --accent-soft:#25402F;
+  --zeit:#86C3DD; --klasse:#8FCFA8; --inhalt:#F0A27A;
+  --ok:#78CF9B; --warn:#E9C54B; --bad:#F0907A;
+  --paper:#111815;
+  --shadow:0 1px 0 rgba(0,0,0,.3),0 16px 36px -16px rgba(0,0,0,.7); color-scheme:dark}
+:root[data-theme="dark"] #board{background:#141B17 radial-gradient(rgba(243,239,217,.07) 1.4px,transparent 1.6px) 0 0/32px 32px!important}
+:root[data-theme="dark"] .w{border-color:rgba(243,239,217,.06)}
 
 *{box-sizing:border-box}
 html,body{height:100%;margin:0}
@@ -324,10 +323,10 @@ textarea.inp{min-height:120px;resize:vertical;line-height:1.5}
 #attn .at-pick{position:absolute;left:0;right:0;bottom:24px;display:flex;justify-content:center;gap:10px;flex-wrap:wrap;padding:0 16px}
 #attn .at-pick .chip{background:rgba(243,239,217,.12);color:var(--chalk);border:0}
 #attn .at-pick .chip.on{background:var(--chalk);color:var(--accent)}
-.dk-attn{display:inline-flex;align-items:center;gap:8px;height:44px;padding:0 14px;border:0;border-radius:12px;background:var(--gold);color:var(--ink);font-weight:800;font-size:15px;cursor:pointer;flex:none}
+.dk-attn{display:inline-flex;align-items:center;gap:8px;height:44px;padding:0 14px;border:0;border-radius:12px;background:var(--gold);color:#1D2421;font-weight:800;font-size:15px;cursor:pointer;flex:none}
 .dk-attn .ic{width:20px;height:20px}
 #stage-attn{display:none}
-#app.stage #stage-attn{display:grid;place-items:center;position:fixed;right:14px;bottom:10px;z-index:99995;width:48px;height:48px;border:0;border-radius:50%;background:rgba(233,197,75,.55);color:var(--ink);cursor:pointer;opacity:.8}
+#app.stage #stage-attn{display:grid;place-items:center;position:fixed;right:14px;bottom:10px;z-index:99995;width:48px;height:48px;border:0;border-radius:50%;background:rgba(233,197,75,.55);color:#1D2421;cursor:pointer;opacity:.8}
 #app.stage #stage-attn:hover{opacity:1;background:var(--gold)}
 #stage-attn .ic{width:22px;height:22px}
 /* Bühne */
@@ -375,7 +374,8 @@ textarea.inp{min-height:120px;resize:vertical;line-height:1.5}
 .pick-tx b{font-size:16px}
 .pick-tx small{color:var(--muted);font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .pick-star{flex:none;width:44px;height:44px;border:0;border-radius:10px;background:transparent;color:var(--muted);font-size:22px;cursor:pointer}
-.pick-star.on{color:#e0a000}
+.pick-star.on{color:#946B08}
+:root[data-theme="dark"] .pick-star.on{color:var(--gold)}
 .pick-star:hover{background:var(--card)}
 
 /* Bildschirme */
@@ -3701,6 +3701,7 @@ function buildDock(){const dk=$('#dock');dk.replaceChildren();const P=APP.P;
   const tools=h('div',{class:'dk-tools'},add,h('div',{class:'dk-favs'},favs().map(t=>{const D=WIDGETS[t];return h('button',{class:'tool',title:D.label+' hinzufügen',onclick:()=>addWidget(t)},ic(D.icon,'cat-'+D.cat),h('span',null,D.label))})));
   const snapBtn=h('button',{class:'ibtn'+(snapOn()?' on':''),title:snapOn()?'Einrasten ist an':'Einrasten ist aus','aria-label':'Einrasten','aria-pressed':String(snapOn()),onclick:()=>{APP.P.snap=!snapOn();save();buildDock();toast(snapOn()?'Einrasten an: Widgets richten sich aneinander aus':'Einrasten aus: Widgets frei verschieben')}},ic('magnet'));
   const right=h('div',{class:'dk-side'},
+    h('button',{class:'ibtn dk-lbtn dk-theme',type:'button','aria-label':'Raum dunkel','aria-pressed':APP.P.theme==='dark'?'true':'false',title:APP.P.theme==='dark'?'Raum hell':'Raum dunkel',onclick:toggleTheme},ic(APP.P.theme==='dark'?'sun':'moon')),
     h('button',{class:'dk-attn',type:'button',title:'Aufmerksamkeit: Tafel abdunkeln, grosse Botschaft (Taste A)','aria-label':'Aufmerksamkeit',onclick:()=>attention()},ic('hand'),h('span',{class:'dk-scr-l'},'Achtung')),
     h('button',{class:'dk-stage',type:'button',title:'Bühne: nur Inhalte zeigen, alle Bedienelemente ausblenden','aria-label':'Bühne',onclick:()=>setStage(true)},ic('eye'),h('span',{class:'dk-scr-l'},'Bühne')),
     h('button',{class:'ibtn dk-lbtn',title:'Hintergrund wählen','aria-label':'Hintergrund',onclick:openBackgrounds},ic('palette'),h('span',{class:'dk-scr-l'},'Hintergrund')),
@@ -3862,7 +3863,7 @@ function pinPad(p){const g=$('#gate');g.replaceChildren();g.classList.remove('re
   g.append(h('div',{class:'g-card',style:{width:'min(420px,100%)',justifyItems:'center',textAlign:'center'}},h('span',{class:'g-av',style:{background:AVC[p.color||0],width:'64px',height:'64px',fontSize:'26px'}},p.name.slice(0,1).toUpperCase()),h('h2',{style:{margin:0}},p.name),h('div',{class:'hint'},'PIN eingeben'),dots,padEl,h('button',{class:'btn',onclick:()=>showGate()},ic('arrow-left'),'Anderes Profil')))}
 function openProfile(p,fresh){LS.set(K_LAST,p.id);APP.guest=false;APP.pid=p.id;APP.P=Object.assign(defaultData(),LS.get(K_P+p.id,null)||{});enterApp(fresh&&!APP.P.widgets.length)}
 function startGuest(){GUEST_SND.clear();APP.guest=true;APP.pid=null;APP.P=defaultData();enterApp(true)}
-function enterApp(starter){APP.sounds=[];loadCustomSounds();$('#gate').hidden=true;$('#app').hidden=false;$('#app').classList.toggle('stage',!!APP.P.stage);$('#stage-attn').replaceChildren(ic('hand'));clearBoard();applyBg();buildDock();
+function enterApp(starter){APP.sounds=[];loadCustomSounds();$('#gate').hidden=true;$('#app').hidden=false;$('#app').classList.toggle('stage',!!APP.P.stage);applyTheme();$('#stage-attn').replaceChildren(ic('hand'));clearBoard();applyBg();buildDock();
   requestAnimationFrame(()=>{if(starter){starterWidgets(APP.P);save()}APP.P.widgets=APP.P.widgets.filter(r=>WIDGETS[r.type]);APP.P.widgets.forEach(mountWidget)})}
 /* ---------- Bühne (während der Lektion) und Werkstatt (einrichten) ---------- */
 /* ---------- Fokus: Doppeltipp holt ein Widget gross nach vorne ---------- */
@@ -3891,10 +3892,13 @@ document.addEventListener('click',e=>{if(e.target.closest('#stage-attn'))attenti
 document.addEventListener('keydown',e=>{if($('#app').hidden||!APP.P)return;const ov=$('#attn');
   if(!ov.hidden&&(e.key==='Escape'||e.key===' '||e.key==='Enter')){e.preventDefault();endAttention();return}
   if((e.key==='a'||e.key==='A')&&!e.ctrlKey&&!e.metaKey&&!e.altKey&&!e.target.closest('input,textarea,select,[contenteditable]')&&!document.querySelector('.ov'))attention()});
+/* ---------- Raum dunkel ---------- */
+function applyTheme(){const d=APP.P&&APP.P.theme==='dark';if(d)document.documentElement.dataset.theme='dark';else document.documentElement.removeAttribute('data-theme');const b=$('.dk-theme');if(b){b.replaceChildren(ic(d?'sun':'moon'));b.title=d?'Raum hell: helle Darstellung':'Raum dunkel: dunkle Darstellung für abgedunkelte Räume';b.setAttribute('aria-pressed',d?'true':'false')}}
+function toggleTheme(){APP.P.theme=APP.P.theme==='dark'?'light':'dark';save();applyTheme()}
 function setStage(on){if(!APP.P)return;APP.P.stage=!!on;save();const app=$('#app');app.classList.toggle('stage',!!on);document.querySelector('.pick-ov')?.remove();
   if(on){for(const I of APP.inst.values())I.el.classList.remove('peek');toast('Bühne: Widget antippen zeigt seine Knöpfe. «Werkzeuge» unten führt zurück.',4200)}}
 document.addEventListener('click',e=>{if(e.target.closest('#stage-handle'))setStage(false)});
-function lockApp(){endAttention();$('#app').classList.remove('stage');saveNow();document.querySelector('.ov')?.remove();clearBoard();APP.P=null;APP.pid=null;APP.guest=false;showGate()}
+function lockApp(){document.documentElement.removeAttribute('data-theme');endAttention();$('#app').classList.remove('stage');saveNow();document.querySelector('.ov')?.remove();clearBoard();APP.P=null;APP.pid=null;APP.guest=false;showGate()}
 
 /* Start */
 try{qrcode.stringToBytes=qrcode.stringToBytesFuncs['UTF-8']}catch(e){}
