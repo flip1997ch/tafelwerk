@@ -141,6 +141,7 @@ textarea.inp{min-height:120px;resize:vertical;line-height:1.5}
 .vt-dial::after{content:"";position:absolute;inset:-4px;border-radius:50%;background:repeating-conic-gradient(var(--ink) 0 .6deg,transparent .6deg 30deg);-webkit-mask:radial-gradient(circle,transparent 86%,#000 87%);mask:radial-gradient(circle,transparent 86%,#000 87%);opacity:.5}
 .vt-lbl{font-family:var(--mono);font-variant-numeric:tabular-nums;letter-spacing:-.02em;position:absolute;inset:0;display:grid;place-items:center;font-weight:700;font-size:max(30px,min(11cqw,13cqh))}
 .vt-lbl b{background:var(--card);padding:2px 10px;border-radius:999px}
+.vt-dial.grab{cursor:grab;touch-action:none}.vt-dial.drag{cursor:grabbing}.vt-dial.drag .vt-lbl b{outline:3px solid var(--gold)}
 .sw{position:absolute;inset:0;display:grid;grid-template-rows:minmax(0,1fr) auto auto;gap:8px;padding:8px 12px 12px}
 .sw-disp{font-family:var(--mono);font-variant-numeric:tabular-nums;letter-spacing:-.02em;display:grid;place-items:center;font-weight:700;font-size:min(17cqw,30cqh);line-height:1}
 .sw-disp small{font-size:.62em;color:var(--muted)}
@@ -202,6 +203,16 @@ textarea.inp{min-height:120px;resize:vertical;line-height:1.5}
 .sl-fill{position:absolute;left:0;top:0;bottom:0;border-radius:999px;background:linear-gradient(90deg,var(--ok),var(--warn) 60%,var(--bad));width:0;transition:width .1s linear}
 .sl-thr{position:absolute;top:-6px;bottom:-6px;width:4px;border-radius:2px;background:var(--ink)}
 .sl-stat{display:grid;place-items:center;text-align:center;font-weight:700;font-size:min(10cqw,26cqh);text-wrap:balance;cursor:pointer;line-height:1.05;border-radius:12px;min-height:0;overflow:hidden}
+.sl-stat{grid-template-columns:auto minmax(0,1fr);gap:4%;padding:0 4px}
+.sl-face{height:min(30cqh,26cqw);width:auto;aspect-ratio:1;fill:none;stroke:currentColor;stroke-width:5;stroke-linecap:round;transition:transform .3s cubic-bezier(.2,1.6,.4,1)}
+.sl-face .fc{fill:color-mix(in srgb,currentColor 14%,transparent)}
+.sl-face .e-open circle{fill:currentColor;stroke:none}
+.sl-face>*:not(.fc){display:none}
+.sl-face.f-ok .e-open,.sl-face.f-ok .m-ok,.sl-face.f-warn .e-open,.sl-face.f-warn .m-warn,.sl-face.f-bad .e-open,.sl-face.f-bad .m-bad,.sl-face.f-bad .brow,.sl-face.f-off .e-shut,.sl-face.f-off .m-off{display:inline}
+.sl-face.f-bad{transform:scale(1.08)}.sl-face.f-bad .m-bad{fill:currentColor}
+.sl-face.f-off{opacity:.7}
+.sl-word{min-width:0;text-align:left;font-size:min(8cqw,22cqh);hyphens:manual}
+@container (max-width:300px){.sl-stat{grid-template-columns:1fr}.sl-word{display:none}.sl-face{height:min(36cqh,40cqw)}}
 .sl-stat.ok{color:var(--ok)} .sl-stat.warn{color:var(--warn)} .sl-stat.bad{color:var(--bad);background:color-mix(in srgb,var(--bad) 12%,transparent)}
 .sl-ctl{display:flex;gap:10px;align-items:center;justify-content:center}
 .sl-mid{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:10px;align-items:stretch;min-height:0}
@@ -251,6 +262,16 @@ textarea.inp{min-height:120px;resize:vertical;line-height:1.5}
 .rd-banner.pop{animation:popc .55s cubic-bezier(.2,1.6,.4,1)}
 @keyframes popc{0%{transform:translate(-50%,-50%) scale(.5)}100%{transform:translate(-50%,-50%)}}
 .confetti{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;z-index:20}
+.rd-hero{position:absolute;inset:6px;z-index:5;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2%;border:0;border-radius:calc(var(--r) - 4px);background:#1F4D3A;color:#F3EFD9;cursor:pointer;padding:6% 5%;overflow:hidden;animation:heroIn .45s cubic-bezier(.2,1.4,.4,1);
+  background-image:radial-gradient(ellipse at 25% 15%,rgba(243,239,217,.12),transparent 55%)}
+:root[data-theme="dark"] .rd-hero{box-shadow:inset 0 0 0 2px rgba(243,239,217,.18)}
+.rd-hero.out{animation:heroOut .22s ease-in forwards}
+.rd-hero-k{font-size:clamp(16px,min(6cqw,9cqh),30px);font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:#E9C54B}
+.rd-hero b{font-weight:800;line-height:1;max-width:100%;overflow-wrap:anywhere;text-align:center}
+.rd-hero-u{display:block;height:clamp(5px,1.6cqh,12px);width:0;border-radius:99px;background:#E9C54B;animation:heroU .7s .25s cubic-bezier(.3,.9,.3,1) forwards}
+@keyframes heroIn{from{opacity:0;transform:scale(.85)}to{opacity:1;transform:none}}
+@keyframes heroOut{to{opacity:0;transform:scale(.96)}}
+@keyframes heroU{to{width:min(60%,14em)}}
 .rd-done{display:flex;flex-wrap:wrap;gap:4px;justify-content:center;max-height:20cqh;overflow:auto}
 .rd-done span{font-size:13px;background:var(--card2);border-radius:6px;padding:1px 7px;text-decoration:line-through;color:var(--muted)}
 .gm{position:absolute;inset:0;display:grid;grid-template-rows:auto minmax(0,1fr);gap:8px;padding:10px 12px}
@@ -3192,7 +3213,16 @@ def('visualtimer',{label:'Visueller Timer',icon:'chart-pie',cat:'zeit',w:360,h:4
     const presets=h('div',{class:'chips'},[1,2,5,10,15,20,30,45].map(m=>h('button',{class:'chip',onclick:()=>{C.E.set(m*60000);I.stopAlarm();C.upd();save()}},m+' Min')));
     const reset=h('button',{class:'btn lg','aria-label':'Zurücksetzen',onclick:()=>{C.E.reset();I.stopAlarm();C.upd();save()}},ic('rotate-ccw'));
     I.body.append(h('div',{class:'vt'},dial,presets,h('div',{class:'ctl'},play,reset)));
-    C=timerCore(I,lbl,play,r=>{dial.style.setProperty('--p',(d.dur?r/d.dur:0).toFixed(4));lbl.textContent=fmt(r)});return C.stop}});
+    /* Zifferblatt wie beim Time Timer: bis 60 Minuten zeigt die rote Fläche die Minuten auf einer 60-Minuten-Scheibe */
+    const scale=()=>d.dur<=3600000?3600000:d.dur;
+    C=timerCore(I,lbl,play,r=>{dial.style.setProperty('--p',Math.min(1,r/scale()).toFixed(4));lbl.textContent=fmt(r)});
+    /* Drehrad: Scheibe ziehen stellt die Zeit (1 bis 60 Minuten), nur wenn der Timer steht */
+    dial.classList.add('grab');dial.title='Ziehen: Zeit einstellen';
+    let dragging=false,lastM=0;const setFrom=e=>{const r=dial.getBoundingClientRect();const x=e.clientX-(r.left+r.width/2),y=e.clientY-(r.top+r.height/2);let a=Math.atan2(x,-y)*180/Math.PI;if(a<0)a+=360;let m=Math.round(a/6);if(m===0)m=lastM>30?60:1;m=clamp(m,1,60);if(m!==lastM){lastM=m;C.E.set(m*60000);I.stopAlarm();C.upd();tick(40)}};
+    dial.addEventListener('pointerdown',e=>{if(d.running||e.button>0)return;e.preventDefault();e.stopPropagation();dragging=true;lastM=Math.round((d.rem>0?d.rem:d.dur)/60000);dial.setPointerCapture(e.pointerId);dial.classList.add('drag');setFrom(e)});
+    dial.addEventListener('pointermove',e=>{if(dragging)setFrom(e)});
+    const endDrag=()=>{if(!dragging)return;dragging=false;dial.classList.remove('drag');save()};dial.addEventListener('pointerup',endDrag);dial.addEventListener('pointercancel',endDrag);
+    return C.stop}});
 def('stopwatch',{label:'Stoppuhr',icon:'timer',cat:'zeit',w:380,h:300,minW:260,minH:220,
   init:()=>({acc:0,start:0,running:false,laps:[]}),
   mount(I){const d=I.data;const el=()=>d.running?d.acc+Date.now()-d.start:d.acc;
@@ -3311,7 +3341,11 @@ def('soundlevel',{label:'Lärmpegel',icon:'audio-lines',cat:'klasse',keepAlive:t
     soundFields(I,p,{allowDef:false,rep:false})},
   mount(I){const d=I.data;let stream=null,ctx=null,raf=0,lvl=0,overSince=0,lastAlert=0,lastAbove=0;
     const fill=h('div',{class:'sl-fill'}),thr=h('div',{class:'sl-thr'});const meter=h('div',{class:'sl-wrap'},h('div',{class:'sl-meter'}),fill,thr);
-    const stat=h('div',{class:'sl-stat ok',title:'Antippen zum Starten oder Stoppen'},'Mikrofon aus');
+    const face=document.createElementNS('http://www.w3.org/2000/svg','svg');face.setAttribute('viewBox','0 0 100 100');face.setAttribute('class','sl-face f-off');face.setAttribute('aria-hidden','true');
+    face.innerHTML='<circle class="fc" cx="50" cy="50" r="44"/><g class="e-open"><circle cx="35" cy="42" r="6"/><circle cx="65" cy="42" r="6"/></g><g class="e-shut"><path d="M28 43 Q35 48 42 43"/><path d="M58 43 Q65 48 72 43"/></g><g class="brow"><path d="M27 30 L41 34"/><path d="M73 30 L59 34"/></g><path class="m-ok" d="M30 60 Q50 80 70 60"/><path class="m-warn" d="M33 67 L67 67"/><ellipse class="m-bad" cx="50" cy="69" rx="10" ry="12"/><path class="m-off" d="M42 66 Q50 70 58 66"/>';
+    const word=h('span',{class:'sl-word'},'Mikro aus');
+    const stat=h('div',{class:'sl-stat ok',title:'Antippen zum Starten oder Stoppen'},face,word);
+    const setStat=(st,t)=>{stat.className='sl-stat '+(st==='off'?'ok':st);face.setAttribute('class','sl-face f-'+st);word.textContent=t};
     const toggle=h('button',{class:'btn pri'});if(d.count==null)d.count=0;
     /* Zähler: immer sichtbar, bleibt gespeichert, bis man ihn zurücksetzt */
     const cntN=h('b',{class:'num'});const cntBox=h('div',{class:'sl-count',title:'So oft war es zu laut'},cntN,h('span',null,'× zu laut'),h('button',{class:'ibtn','aria-label':'Zähler auf 0 setzen',title:'Zähler auf 0 setzen',onclick:()=>{d.count=0;showCnt();save()}},ic('rotate-ccw')));
@@ -3319,17 +3353,17 @@ def('soundlevel',{label:'Lärmpegel',icon:'audio-lines',cat:'klasse',keepAlive:t
     I.applied=()=>{thr.style.left=d.thr+'%'};I.applied();I.level=()=>lvl;I.running=()=>!!stream;
     I.body.append(h('div',{class:'sl'},meter,h('div',{class:'sl-mid'},stat,cntBox),h('div',{class:'sl-ctl'},toggle)));
     const setBtn=()=>toggle.replaceChildren(ic(stream?'pause':'play'),h('span',{class:'bl'},stream?'Stoppen':'Messen'));setBtn();
-    async function start(){if(!navigator.mediaDevices||!navigator.mediaDevices.getUserMedia){stat.className='sl-stat warn';stat.textContent='Kein Mikrofon verfügbar';return}
-      try{stream=await navigator.mediaDevices.getUserMedia({audio:{echoCancellation:false,noiseSuppression:false,autoGainControl:false}})}catch(e){stream=null;stat.className='sl-stat warn';stat.textContent='Mikrofon nicht erlaubt';setBtn();return}
+    async function start(){if(!navigator.mediaDevices||!navigator.mediaDevices.getUserMedia){setStat('warn','Kein Mikro');return}
+      try{stream=await navigator.mediaDevices.getUserMedia({audio:{echoCancellation:false,noiseSuppression:false,autoGainControl:false}})}catch(e){stream=null;setStat('warn','Mikro nicht erlaubt');setBtn();return}
       ctx=new (window.AudioContext||window.webkitAudioContext)();const src=ctx.createMediaStreamSource(stream),an=ctx.createAnalyser();an.fftSize=2048;src.connect(an);const buf=new Float32Array(an.fftSize);setBtn();
       const loop=()=>{an.getFloatTimeDomainData(buf);let s=0;for(let i=0;i<buf.length;i++)s+=buf[i]*buf[i];const db=20*Math.log10(Math.sqrt(s/buf.length)+1e-9);const gain=Math.pow(2,(d.sens-50)/25);const v=clamp((db+70)/60*100*gain,0,100);lvl+=(v-lvl)*(v>lvl?.35:.08);fill.style.width=lvl.toFixed(1)+'%';
         /* Laute Phase: über der Grenze, kurze Pausen (< 0,4 s) zählen nicht. Jede Phase zählt einmal; vorbei ist sie nach 1,5 s Ruhe. */
         const now=performance.now();if(lvl>=d.thr){lastAbove=now;if(!overSince)overSince=now}else if(overSince&&stat.dataset.s!=='bad'&&now-lastAbove>400)overSince=0;
-        if(overSince&&now-overSince>600&&stat.dataset.s!=='bad'){d.count++;showCnt(true);save();stat.dataset.s='bad';stat.className='sl-stat bad';stat.textContent='Zu laut!';if(d.beep&&now-lastAlert>6000){if(I._snd)I._snd();I._snd=playSound(d.sound||'piep',d.vol,1);lastAlert=now}}
+        if(overSince&&now-overSince>600&&stat.dataset.s!=='bad'){d.count++;showCnt(true);save();stat.dataset.s='bad';setStat('bad','Zu laut!');if(d.beep&&now-lastAlert>6000){if(I._snd)I._snd();I._snd=playSound(d.sound||'piep',d.vol,1);lastAlert=now}}
         if(stat.dataset.s==='bad'&&now-lastAbove>1500)overSince=0,stat.dataset.s='';
-        if(stat.dataset.s!=='bad'){const st=lvl>=d.thr*.7?'warn':'ok';if(stat.dataset.s!==st){stat.dataset.s=st;stat.className='sl-stat '+st;stat.textContent=st==='ok'?'Gut so':'Etwas leiser'}}
+        if(stat.dataset.s!=='bad'){const st=lvl>=d.thr*.7?'warn':'ok';if(stat.dataset.s!==st){stat.dataset.s=st;setStat(st,st==='ok'?'Schön ruhig':'Etwas leiser')}}
         raf=requestAnimationFrame(loop)};loop()}
-    function stop(){cancelAnimationFrame(raf);if(stream)stream.getTracks().forEach(t=>t.stop());stream=null;if(ctx)ctx.close().catch(()=>{});ctx=null;lvl=0;fill.style.width='0';stat.className='sl-stat ok';stat.dataset.s='';stat.textContent='Mikrofon aus';setBtn()}
+    function stop(){cancelAnimationFrame(raf);if(stream)stream.getTracks().forEach(t=>t.stop());stream=null;if(ctx)ctx.close().catch(()=>{});ctx=null;lvl=0;fill.style.width='0';stat.dataset.s='';setStat('off','Mikro aus');setBtn()}
     toggle.addEventListener('click',()=>stream?stop():start());stat.addEventListener('click',()=>stream?stop():start());
     return stop}});
 def('trafficlight',{label:'Ampel',icon:'traffic-cone',cat:'klasse',w:190,h:380,minW:140,minH:260,init:()=>({s:'g'}),
@@ -3354,7 +3388,8 @@ def('randomizer',{label:'Zufallsname',icon:'shuffle',cat:'klasse',
       field('Woher kommen die Namen?',chipGroup([['class','Aktive Klasse (anwesend)'],['list','Eigene Liste']],d.src,v=>d.src=v)),
       h('label',{class:'field'},h('span',null,'Eigene Liste (eine Zeile pro Eintrag)'),h('textarea',{class:'inp',value:d.list,placeholder:'z. B. Themen, Aufgaben, Ämtli',oninput:e=>d.list=e.target.value})),
       h('label',{class:'row'},h('input',{type:'checkbox',checked:d.noRepeat,onchange:e=>d.noRepeat=e.target.checked,style:{width:'22px',height:'22px'}}),'Jeden Namen nur einmal ziehen'),
-      h('label',{class:'row'},h('input',{type:'checkbox',checked:d.snd,onchange:e=>d.snd=e.target.checked,style:{width:'22px',height:'22px'}}),'Tick-Geräusch und Gewinner-Ton'))},
+      h('label',{class:'row'},h('input',{type:'checkbox',checked:d.snd,onchange:e=>d.snd=e.target.checked,style:{width:'22px',height:'22px'}}),'Tick-Geräusch und Gewinner-Ton'),
+      h('label',{class:'row'},h('input',{type:'checkbox',checked:d.hero!==false,onchange:e=>d.hero=e.target.checked,style:{width:'22px',height:'22px'}}),'Gezogenen Namen danach gross zeigen'))},
   mount(I){const d=I.data;if(!d.anim)d.anim='slot';if(d.snd==null)d.snd=true;if(d.vol==null)d.vol=70;
     const names=()=>d.src==='class'?presentNames():d.list.split('\n').map(s=>s.trim()).filter(Boolean);
     if(d.src==='class'&&!activeClass()){I.body.append(noClassHint(I));return}
@@ -3367,7 +3402,12 @@ def('randomizer',{label:'Zufallsname',icon:'shuffle',cat:'klasse',
     let busy=false,raf=0,anim=null;
     const finish=pick=>{if(pick===teacherPick()){/* Aprilscherz-Ziehung: nichts speichern, kurz zeigen, dann auflösen */if(d.snd)tada(d.vol);confetti(I.body);
         setTimeout(()=>{stage.replaceChildren(h('div',{class:'rd-name rd-msg pop'},'April, April! 🐟'));setTimeout(()=>{busy=false;view.reset()},2400)},2200);return}
-      busy=false;d.cur=pick;if(d.noRepeat&&!d.drawn.includes(pick))d.drawn.push(pick);drawDone();save();if(d.snd)tada(d.vol);confetti(I.body)};
+      busy=false;d.cur=pick;if(d.noRepeat&&!d.drawn.includes(pick))d.drawn.push(pick);drawDone();save();if(d.snd)tada(d.vol);confetti(I.body);if(d.hero!==false)setTimeout(()=>hero(pick),view===wheel?700:450)};
+    /* Namens-Held: der gezogene Name gross auf Tafelgrün, Antippen schliesst */
+    const hero=pick=>{if(!root.isConnected||busy)return;root.querySelector('.rd-hero')?.remove();const el=h('button',{type:'button',class:'rd-hero','aria-label':pick+' ist dran. Antippen schliesst.'},h('span',{class:'rd-hero-k'},'Du bist dran'),h('b',null,pick),h('i',{class:'rd-hero-u'}));
+      el.addEventListener('click',e=>{e.stopPropagation();el.classList.add('out');setTimeout(()=>el.remove(),220)});root.append(el);
+      const fit=()=>{const b=el.querySelector('b');const W=el.clientWidth,H=el.clientHeight;b.style.fontSize=Math.max(28,Math.min(H*.42,W*1.7/Math.max(4,pick.length)))+'px'};fit();
+      I._heroFit=fit};
     const msg=t=>{stage.replaceChildren(h('div',{class:'rd-name rd-msg'},t))};
     /* --- Schnell (wie bisher) --- */
     const quick={reset(){stage.replaceChildren(h('div',{class:'rd-name'},d.cur||'Wer ist dran?'))},
@@ -3400,11 +3440,11 @@ def('randomizer',{label:'Zufallsname',icon:'shuffle',cat:'klasse',
         const step=now=>{const t=Math.min(1,(now-t0)/dur);rot=r0+(target-r0)*ease(t);wheel.draw();const sgi=seg();if(sgi!==lastSeg){if(lastSeg!==null&&d.snd)tick(d.vol);lastSeg=sgi}
           if(t<1)raf=requestAnimationFrame(step);else{rot%=2*Math.PI;const b=stage.querySelector('.rd-banner');if(b){b.textContent=pick;b.hidden=false;b.classList.remove('pop');void b.offsetWidth;b.classList.add('pop')}finish(pick)}};raf=requestAnimationFrame(step)}};
     const view=d.anim==='wheel'?wheel:d.anim==='quick'?quick:slot;
-    go.addEventListener('click',()=>{if(busy)return;const all=names();const pl=pool();if(!all.length){msg('Keine Namen vorhanden');return}if(!pl.length){msg('Alle gezogen. Zurücksetzen?');return}
+    go.addEventListener('click',()=>{if(busy)return;root.querySelector('.rd-hero')?.remove();const all=names();const pl=pool();if(!all.length){msg('Keine Namen vorhanden');return}if(!pl.length){msg('Alle gezogen. Zurücksetzen?');return}
       ac();busy=true;const fy=new Date().getFullYear(),fool=foolOn()&&isApr1()&&APP.P.aprilPick!==fy;
       if(fool){APP.P.aprilPick=fy;save()}const pick=fool?teacherPick():pl[Math.floor(Math.random()*pl.length)];view.run(pick,all)});
     view.reset();drawDone();
-    I.redraw=()=>{if(!busy){if(view===wheel)wheel.draw();else if(view===slot)slot.fit()}};
+    I.redraw=()=>{if(root.querySelector('.rd-hero')&&I._heroFit)I._heroFit();if(!busy){if(view===wheel)wheel.draw();else if(view===slot)slot.fit()}};
     const ro=new ResizeObserver(()=>requestAnimationFrame(()=>I.redraw()));ro.observe(stage);
     return()=>{ro.disconnect();cancelAnimationFrame(raf);clearTimeout(raf);if(anim)anim.cancel()}}});
 def('groupmaker',{label:'Gruppen',icon:'users-round',cat:'klasse',init:()=>({mode:'count',n:4,groups:[]}),
