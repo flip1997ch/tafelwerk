@@ -282,6 +282,16 @@ textarea.inp{min-height:120px;resize:vertical;line-height:1.5}
 .gm-g{border:1px solid var(--line);border-radius:12px;padding:8px 10px;background:var(--card2)}
 .gm-g b{display:block;color:var(--klasse);margin-bottom:4px;font-size:clamp(20px,6cqw,32px)}
 .gm-g div{font-size:clamp(20px,6cqw,34px);line-height:1.2}
+button.gm-g{display:block;width:100%;text-align:left;font:inherit;color:inherit;cursor:pointer}
+.gm-g .gm-cover{display:flex;flex-direction:column;gap:2px;color:var(--muted);font-weight:700}
+.gm-g .gm-cover small{font-size:15px;font-weight:600;opacity:.85}
+.gm-g.veiled{background:repeating-linear-gradient(135deg,var(--card2) 0 10px,color-mix(in srgb,var(--card2) 70%,var(--line)) 10px 20px)}
+.rd-done .cnt{text-decoration:none}
+.veil{position:relative}
+.veil:not(.open)>:first-child{filter:blur(9px);pointer-events:none;user-select:none}
+.veil-b{position:absolute;inset:0;margin:auto;width:max-content;height:48px;display:inline-flex;align-items:center;gap:8px;padding:0 18px;border:0;border-radius:999px;background:var(--ink);color:var(--card);font-weight:700;cursor:pointer;box-shadow:var(--shadow)}
+.disc-row{align-items:flex-start;gap:12px;padding:14px 16px;border-radius:14px;background:var(--accent-soft)}
+.disc-row small{color:var(--muted);font-size:14px}
 .sb{position:absolute;inset:0;display:grid;grid-auto-flow:column;grid-auto-columns:minmax(0,1fr);gap:8px;padding:10px}
 .sb-t{display:grid;grid-template-rows:auto 1fr auto;border-radius:12px;padding:8px;color:#fff;text-align:center;min-height:0}
 .sb-t .n{font-weight:700;font-size:clamp(16px,calc(17cqw / var(--n,2)),36px);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
@@ -3187,6 +3197,9 @@ window.addEventListener('resize',debounce(()=>{if(!APP.P)return;const B=$('#boar
 
 /* Klasse: aktive Klasse und anwesende Kinder */
 function activeClass(){const P=APP.P;return P.classes.find(c=>c.id===P.activeClassId)||null}
+/* Diskret-Modus: Namen erscheinen nur, wenn man sie aktiv antippt oder zieht. Standard: an. */
+const discreet=()=>!!(APP.P&&APP.P.discreet!==false);
+function veil(content,label){const box=h('div',{class:'veil'},content);if(!discreet())return content;const btn=h('button',{type:'button',class:'veil-b'},ic('eye'),label);btn.addEventListener('click',()=>{box.classList.add('open');btn.remove()});box.append(btn);return box}
 function presentNames(){const c=activeClass();return c?c.students.filter(s=>s.present!==false).map(s=>s.name):[]}
 function noClassHint(I){return h('div',{class:'empty'},ic('users-round'),h('div',null,h('b',null,'Noch keine Klasse gewählt'),h('div',{class:'hint'},'Lege unter «Klassen» eine Klassenliste an.')),h('button',{class:'btn pri',onclick:()=>openSettings('klassen')},'Klasse anlegen'))}
 
@@ -3398,11 +3411,14 @@ def('randomizer',{label:'Zufallsname',icon:'shuffle',cat:'klasse',
     const go=h('button',{class:'btn pri lg'},ic('shuffle'),h('span',{class:'bl'},d.anim==='wheel'?'Drehen':'Ziehen'));
     const rs=h('button',{class:'btn lg','aria-label':'Liste zurücksetzen',title:'Alle wieder in den Topf',onclick:()=>{if(busy)return;d.drawn=[];d.cur='';save();drawDone();view.reset()}},ic('rotate-ccw'));
     const root=h('div',{class:'rd'},stage,done,h('div',{class:'ctl'},go,rs));I.body.append(root);
-    function drawDone(){done.replaceChildren(...(d.noRepeat?d.drawn:[]).map(n=>h('span',null,n)))}
+    function drawDone(){if(discreet()){done.replaceChildren(...(d.noRepeat&&d.drawn.length?[h('span',{class:'cnt'},`${d.drawn.length} von ${names().length} gezogen`)]:[]));return}done.replaceChildren(...(d.noRepeat?d.drawn:[]).map(n=>h('span',null,n)))}
+    const idleName=()=>discreet()?'Wer ist dran?':(d.cur||'Wer ist dran?');let hideT=0;
     let busy=false,raf=0,anim=null;
     const finish=pick=>{if(pick===teacherPick()){/* Aprilscherz-Ziehung: nichts speichern, kurz zeigen, dann auflösen */if(d.snd)tada(d.vol);confetti(I.body);
         setTimeout(()=>{stage.replaceChildren(h('div',{class:'rd-name rd-msg pop'},'April, April! 🐟'));setTimeout(()=>{busy=false;view.reset()},2400)},2200);return}
-      busy=false;d.cur=pick;if(d.noRepeat&&!d.drawn.includes(pick))d.drawn.push(pick);drawDone();save();if(d.snd)tada(d.vol);confetti(I.body);if(d.hero!==false)setTimeout(()=>hero(pick),view===wheel?700:450)};
+      busy=false;d.cur=pick;if(d.noRepeat&&!d.drawn.includes(pick))d.drawn.push(pick);drawDone();save();if(d.snd)tada(d.vol);confetti(I.body);if(d.hero!==false)setTimeout(()=>hero(pick),view===wheel?700:450);
+      /* Diskret: der Name bleibt nicht stehen, nach 12 Sekunden zurück zu «Wer ist dran?» */
+      clearTimeout(hideT);if(discreet())hideT=setTimeout(()=>{if(busy||!root.isConnected)return;const hh=root.querySelector('.rd-hero');if(hh){hh.classList.add('out');setTimeout(()=>hh.remove(),220)}view.reset()},12000)};
     /* Namens-Held: der gezogene Name gross auf Tafelgrün, Antippen schliesst */
     const hero=pick=>{if(!root.isConnected||busy)return;root.querySelector('.rd-hero')?.remove();const el=h('button',{type:'button',class:'rd-hero','aria-label':pick+' ist dran. Antippen schliesst.'},h('span',{class:'rd-hero-k'},'Du bist dran'),h('b',null,pick),h('i',{class:'rd-hero-u'}));
       el.addEventListener('click',e=>{e.stopPropagation();el.classList.add('out');setTimeout(()=>el.remove(),220)});root.append(el);
@@ -3410,13 +3426,13 @@ def('randomizer',{label:'Zufallsname',icon:'shuffle',cat:'klasse',
       I._heroFit=fit};
     const msg=t=>{stage.replaceChildren(h('div',{class:'rd-name rd-msg'},t))};
     /* --- Schnell (wie bisher) --- */
-    const quick={reset(){stage.replaceChildren(h('div',{class:'rd-name'},d.cur||'Wer ist dran?'))},
+    const quick={reset(){stage.replaceChildren(h('div',{class:'rd-name'},idleName()))},
       run(pick,all){const el=h('div',{class:'rd-name spin'});stage.replaceChildren(el);let i=0;const steps=REDUCED()?1:16;const t=()=>{el.textContent=all[Math.floor(Math.random()*all.length)];if(d.snd)tick(d.vol);if(++i<steps)raf=setTimeout(t,35+i*i*1.3);else{el.classList.remove('spin');el.textContent=pick;el.classList.add('pop');finish(pick)}};t()}};
     /* --- Slotmaschine --- */
     let ci=1;
     const slot={fit(){const reel=stage.querySelector('.rd-reel');if(!reel)return;const strip=reel.firstChild,H=reel.clientHeight/3,W=reel.clientWidth;if(!H)return;for(const it of strip.children){it.style.height=H+'px';it.style.fontSize=Math.min(H*.62,W/Math.max(6,it.textContent.length)*1.55)+'px'}strip.style.transform=`translateY(${-(ci-1)*H}px)`},
-      reset(){ci=1;const n=d.cur||'Wer ist dran?';const reel=h('div',{class:'rd-reel'});const strip=h('div',{class:'rd-strip'});reel.append(strip,h('i',{class:'rd-frame'}));stage.replaceChildren(reel);
-        requestAnimationFrame(()=>{const H=reel.clientHeight/3;const all=names();const r=()=>all.length?all[Math.floor(Math.random()*all.length)]:'';strip.replaceChildren(...[r(),n,r()].map((t,k)=>h('div',{class:'rd-item'+(k===1?' win':''),style:{height:H+'px',fontSize:Math.min(H*.62,reel.clientWidth/Math.max(6,t.length)*1.55)+'px'}},t)));strip.style.transform=`translateY(0px)`})},
+      reset(){ci=1;const n=idleName();const reel=h('div',{class:'rd-reel'});const strip=h('div',{class:'rd-strip'});reel.append(strip,h('i',{class:'rd-frame'}));stage.replaceChildren(reel);
+        requestAnimationFrame(()=>{const H=reel.clientHeight/3;const all=names();const r=()=>discreet()?'•••':all.length?all[Math.floor(Math.random()*all.length)]:'';strip.replaceChildren(...[r(),n,r()].map((t,k)=>h('div',{class:'rd-item'+(k===1?' win':''),style:{height:H+'px',fontSize:Math.min(H*.62,reel.clientWidth/Math.max(6,t.length)*1.55)+'px'}},t)));strip.style.transform=`translateY(0px)`})},
       run(pick,all){const reel=stage.querySelector('.rd-reel');if(!reel){slot.reset();return requestAnimationFrame(()=>slot.run(pick,all))}const strip=reel.firstChild;const H=reel.clientHeight/3,W=reel.clientWidth;
         const cur=strip.children[1]?strip.children[1].textContent:'';const N=REDUCED()?2:Math.max(24,Math.min(44,all.length*3));const seq=[strip.children[0]?.textContent||'',cur];
         let last=cur;for(let k=0;k<N;k++){let n=all[Math.floor(Math.random()*all.length)];if(all.length>1)while(n===last)n=all[Math.floor(Math.random()*all.length)];seq.push(n);last=n}seq.push(pick,all[Math.floor(Math.random()*all.length)]);
@@ -3424,14 +3440,14 @@ def('randomizer',{label:'Zufallsname',icon:'shuffle',cat:'klasse',
         const end=-(seq.length-3)*H;strip.style.transform='translateY(0px)';reel.classList.add('rolling');
         anim=strip.animate([{transform:'translateY(0px)'},{transform:`translateY(${end}px)`}],{duration:REDUCED()?300:3200+Math.random()*600,easing:'cubic-bezier(.12,.62,.16,1.04)',fill:'forwards'});
         let li=0;const loop=()=>{const m=new DOMMatrixReadOnly(getComputedStyle(strip).transform);const idx=Math.round(-m.m42/H);if(idx!==li){li=idx;if(d.snd)tick(d.vol)}raf=requestAnimationFrame(loop)};raf=requestAnimationFrame(loop);
-        anim.onfinish=()=>{cancelAnimationFrame(raf);ci=seq.length-2;strip.style.transform=`translateY(${end}px)`;anim.cancel();anim=null;reel.classList.remove('rolling');const w=strip.children[seq.length-2];w.classList.add('win','pop');finish(pick)}}};
+        anim.onfinish=()=>{cancelAnimationFrame(raf);ci=seq.length-2;strip.style.transform=`translateY(${end}px)`;anim.cancel();anim=null;reel.classList.remove('rolling');const w=strip.children[seq.length-2];w.classList.add('win','pop');if(discreet())[...strip.children].forEach(x=>{if(x!==w)x.textContent='•••'});finish(pick)}}};
     /* --- Glücksrad --- */
     let rot=-Math.PI/2,segs=[];
-    const wheel={cv:null,reset(){segs=pool();if(!segs.length)segs=names();const wrap=h('div',{class:'rd-wheel'});const cv=h('canvas');wrap.append(cv,h('i',{class:'rd-pointer'}),h('div',{class:'rd-banner',hidden:!d.cur},d.cur));stage.replaceChildren(wrap);wheel.cv=cv;requestAnimationFrame(()=>wheel.draw())},
+    const wheel={cv:null,reset(){segs=pool();if(!segs.length)segs=names();const wrap=h('div',{class:'rd-wheel'});const cv=h('canvas');wrap.append(cv,h('i',{class:'rd-pointer'}),h('div',{class:'rd-banner',hidden:!d.cur||discreet()},d.cur));stage.replaceChildren(wrap);wheel.cv=cv;requestAnimationFrame(()=>wheel.draw())},
       draw(){const cv=wheel.cv;if(!cv||!cv.isConnected)return;const box=cv.parentNode.getBoundingClientRect();const S=Math.max(60,Math.min(box.width,box.height));const dpr=Math.min(2,window.devicePixelRatio||1);if(cv.width!==Math.round(S*dpr)){cv.width=cv.height=Math.round(S*dpr);cv.style.width=cv.style.height=S+'px'}
         const g=cv.getContext('2d');g.setTransform(dpr,0,0,dpr,0,0);g.clearRect(0,0,S,S);const R=S/2-4,c=S/2,n=Math.max(1,segs.length),a=2*Math.PI/n;const ff=getComputedStyle(document.body).fontFamily;
         for(let k=0;k<n;k++){let col=WHEELC[k%WHEELC.length];if(k===n-1&&n%WHEELC.length===1&&n>1)col=WHEELC[1];g.beginPath();g.moveTo(c,c);g.arc(c,c,R,rot+k*a,rot+(k+1)*a);g.closePath();g.fillStyle=col;g.fill();g.strokeStyle='rgba(255,255,255,.85)';g.lineWidth=2;g.stroke();
-          const t=segs[k]||'';g.save();g.translate(c,c);g.rotate(rot+(k+.5)*a);g.fillStyle='#fff';g.textAlign='right';g.textBaseline='middle';let fz=Math.min(R*.16,R*a*.55);g.font=`700 ${fz}px ${ff}`;while(g.measureText(t).width>R*.72&&fz>9){fz-=1;g.font=`700 ${fz}px ${ff}`}g.fillText(t,R-12,1);g.restore()}
+          const t=discreet()?String(k+1):(segs[k]||'');g.save();g.translate(c,c);g.rotate(rot+(k+.5)*a);g.fillStyle='#fff';g.textAlign='right';g.textBaseline='middle';let fz=Math.min(R*.16,R*a*.55);g.font=`700 ${fz}px ${ff}`;while(g.measureText(t).width>R*.72&&fz>9){fz-=1;g.font=`700 ${fz}px ${ff}`}g.fillText(t,R-12,1);g.restore()}
         g.beginPath();g.arc(c,c,R,0,7);g.lineWidth=5;g.strokeStyle='#1a2230';g.stroke();g.beginPath();g.arc(c,c,R*.12,0,7);g.fillStyle='#fff';g.fill();g.lineWidth=4;g.stroke()},
       run(pick){const ban=stage.querySelector('.rd-banner');if(ban)ban.hidden=true;segs=pool();if(!segs.includes(pick))segs.splice(Math.floor(Math.random()*(segs.length+1)),0,pick);const k=segs.indexOf(pick),n=segs.length,a=2*Math.PI/n;wheel.draw();
         const jitter=(Math.random()-.5)*a*.6;let target=-Math.PI/2-(k+.5)*a+jitter;const turns=REDUCED()?0:5+Math.floor(Math.random()*3);while(target<rot)target+=2*Math.PI;target+=turns*2*Math.PI;
@@ -3446,17 +3462,21 @@ def('randomizer',{label:'Zufallsname',icon:'shuffle',cat:'klasse',
     view.reset();drawDone();
     I.redraw=()=>{if(root.querySelector('.rd-hero')&&I._heroFit)I._heroFit();if(!busy){if(view===wheel)wheel.draw();else if(view===slot)slot.fit()}};
     const ro=new ResizeObserver(()=>requestAnimationFrame(()=>I.redraw()));ro.observe(stage);
-    return()=>{ro.disconnect();cancelAnimationFrame(raf);clearTimeout(raf);if(anim)anim.cancel()}}});
+    return()=>{ro.disconnect();cancelAnimationFrame(raf);clearTimeout(raf);clearTimeout(hideT);if(anim)anim.cancel()}}});
 def('groupmaker',{label:'Gruppen',icon:'users-round',cat:'klasse',init:()=>({mode:'count',n:4,groups:[]}),
   settings(I,p){const d=I.data;p.append(field('Gruppen bilden nach',chipGroup([['count','Anzahl Gruppen'],['size','Kinder pro Gruppe']],d.mode,v=>d.mode=v)))},
   mount(I){const d=I.data;if(!activeClass()){I.body.append(noClassHint(I));return}
     const grid=h('div',{class:'gm-grid'});const nIn=h('span',{class:'num gm-n nah'});
     const lbl=()=>{nIn.textContent=d.mode==='count'?`${d.n} Gruppen`:`${d.n} pro Gruppe`};
     const step=v=>{d.n=clamp(d.n+v,2,15);lbl();save()};
-    const make=()=>{const N=shuffle(presentNames());if(N.length<2){grid.replaceChildren(h('div',{class:'hint'},'Zu wenige anwesende Kinder.'));return}const g=d.mode==='count'?Math.min(d.n,N.length):Math.max(1,Math.round(N.length/d.n));const out=Array.from({length:g},()=>[]);N.forEach((n,i)=>out[i%g].push(n));d.groups=out;draw();save()};
-    function draw(){grid.replaceChildren(...(d.groups.length?d.groups.map((g,i)=>h('div',{class:'gm-g'},h('b',null,`Gruppe ${i+1}`),g.map(n=>h('div',null,n)))):[h('div',{class:'hint'},`${presentNames().length} Kinder anwesend.`)]))}
+    const make=()=>{const N=shuffle(presentNames());if(N.length<2){grid.replaceChildren(h('div',{class:'hint'},'Zu wenige anwesende Kinder.'));return}const g=d.mode==='count'?Math.min(d.n,N.length):Math.max(1,Math.round(N.length/d.n));const out=Array.from({length:g},()=>[]);N.forEach((n,i)=>out[i%g].push(n));d.groups=out;shown=new Set();draw();save()};
+    let shown=new Set();
+    function draw(){const D=discreet();grid.replaceChildren(...(d.groups.length?d.groups.map((g,i)=>{const open=!D||shown.has(i);const card=h(D?'button':'div',{class:'gm-g'+(open?'':' veiled'),type:D?'button':null,'aria-expanded':D?String(open):null},h('b',null,`Gruppe ${i+1}`),open?g.map(n=>h('div',null,n)):h('div',{class:'gm-cover'},g.length===1?'1 Kind':`${g.length} Kinder`,h('small',null,'antippen')));
+        if(D)card.addEventListener('click',()=>{shown.has(i)?shown.delete(i):shown.add(i);draw()});return card}):[h('div',{class:'hint'},`${presentNames().length} Kinder anwesend.`)]));
+      if(eyeB){eyeB.hidden=!D||!d.groups.length;eyeB.replaceChildren(ic(shown.size===d.groups.length?'eye-off':'eye'))}}
+    const eyeB=h('button',{class:'ibtn','aria-label':'Alle Gruppen zeigen oder verbergen',title:'Alle zeigen / verbergen',onclick:()=>{shown=shown.size===d.groups.length?new Set():new Set(d.groups.map((_,i)=>i));draw()}});
     lbl();
-    I.body.append(h('div',{class:'gm'},h('div',{class:'gm-top'},h('button',{class:'ibtn','aria-label':'Weniger',onclick:()=>step(-1)},ic('minus')),nIn,h('button',{class:'ibtn','aria-label':'Mehr',onclick:()=>step(1)},ic('plus')),h('button',{class:'btn pri gm-go',onclick:make},ic('shuffle'),h('span',{class:'bl'},'Mischen'))),grid));draw()}});
+    I.body.append(h('div',{class:'gm'},h('div',{class:'gm-top'},h('button',{class:'ibtn','aria-label':'Weniger',onclick:()=>step(-1)},ic('minus')),nIn,h('button',{class:'ibtn','aria-label':'Mehr',onclick:()=>step(1)},ic('plus')),eyeB,h('button',{class:'btn pri gm-go',onclick:make},ic('shuffle'),h('span',{class:'bl'},'Mischen'))),grid));draw()}});
 const TEAMC=['#1F4D3A','#AF432D','#245F78','#8A6410','#6B4E8C','#3E6B57'];
 def('scoreboard',{label:'Punkte',icon:'trophy',cat:'klasse',w:440,h:280,minW:260,minH:200,
   init:()=>({teams:[{n:'Team A',s:0},{n:'Team B',s:0}]}),
@@ -3802,11 +3822,11 @@ function paneClasses(redraw){const P=APP.P;let sel=P.activeClassId||(P.classes[0
     const saveBtn=h('button',{class:'btn pri',onclick:()=>{const nm=nameIn.value.trim()||'Klasse';const lines=[...new Set(namesIn.value.split('\n').map(s=>s.trim()).filter(Boolean))].slice(0,60);
       if(c){const old=new Map(c.students.map(s=>[s.name,s]));c.name=nm;c.students=lines.map(n=>old.get(n)||{id:uid(),name:n,present:true})}else{const nc={id:uid(),name:nm,students:lines.map(n=>({id:uid(),name:n,present:true}))};P.classes.push(nc);sel=nc.id;if(!P.activeClassId)P.activeClassId=nc.id}
       save();afterClassChange();toast('Klasse gespeichert');draw()}},ic('save'),c?'Speichern':'Klasse anlegen');
-    ed.append(h('label',{class:'field'},h('span',null,'Name der Klasse'),nameIn),h('label',{class:'field'},h('span',null,'Kinder (ein Name pro Zeile)'),namesIn),
+    ed.append(h('label',{class:'field'},h('span',null,'Name der Klasse'),nameIn),h('div',{class:'field'},h('span',null,'Kinder (ein Name pro Zeile)'),c&&c.students.length?veil(namesIn,'Namen zeigen'):namesIn),
       h('div',{class:'note'},'Datenschutz: Nur Vornamen oder Kürzel eintragen (z. B. «Mia M.»). Keine Geburtsdaten, Noten oder Bemerkungen. Die Liste bleibt in diesem Browser.'),
       h('div',{class:'row'},saveBtn,c&&c.id!==P.activeClassId?h('button',{class:'btn',onclick:()=>{P.activeClassId=c.id;save();afterClassChange();draw()}},ic('check'),'Als aktive Klasse wählen'):null,
         c?armed(h('button',{class:'btn danger'},'Klasse löschen'),'Wirklich löschen?',()=>{P.classes=P.classes.filter(x=>x!==c);if(P.activeClassId===c.id)P.activeClassId=P.classes[0]?P.classes[0].id:null;sel=P.activeClassId||'new';save();afterClassChange();draw()}):null));
-    if(c&&c.students.length)ed.append(h('div',{class:'field'},h('span',null,'Heute anwesend (antippen)'),h('div',{class:'att'},c.students.map(s=>h('button',{class:s.present===false?'off':'','aria-pressed':String(s.present!==false),onclick:e=>{s.present=s.present===false;e.currentTarget.classList.toggle('off',s.present===false);e.currentTarget.setAttribute('aria-pressed',String(s.present));save();afterClassChange(true)}},s.name))),
+    if(c&&c.students.length)ed.append(h('div',{class:'field'},h('span',null,'Heute anwesend (antippen)'),veil(h('div',{class:'att'},c.students.map(s=>h('button',{class:s.present===false?'off':'','aria-pressed':String(s.present!==false),onclick:e=>{s.present=s.present===false;e.currentTarget.classList.toggle('off',s.present===false);e.currentTarget.setAttribute('aria-pressed',String(s.present));save();afterClassChange(true)}},s.name))),'Anwesenheit zeigen'),
       h('div',{class:'row'},h('button',{class:'btn',onclick:()=>{c.students.forEach(s=>s.present=true);save();afterClassChange();draw()}},'Alle anwesend'))));
     wrap.replaceChildren(list,ed)}
   draw();return wrap}
@@ -3873,7 +3893,9 @@ function paneData(){const P=APP.P;
   const exp=h('button',{class:'btn',onclick:()=>{const prof=APP.profiles.find(p=>p.id===APP.pid);const blob=new Blob([JSON.stringify({app:'tafelwerk',version:1,exported:new Date().toISOString(),profile:prof?prof.name:'Gast',data:P},null,1)],{type:'application/json'});const a=h('a',{href:URL.createObjectURL(blob),download:`tafelwerk-${(prof?prof.name:'gast').replace(/\W+/g,'-').toLowerCase()}.json`});document.body.append(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove()},1000)}},ic('download'),'Sicherung herunterladen');
   const imp=h('button',{class:'btn',onclick:async()=>{const f=await pickFile('application/json,.json');if(!f)return;try{const j=JSON.parse(await f.text());if(j.app!=='tafelwerk'||!j.data||!Array.isArray(j.data.widgets)||!Array.isArray(j.data.classes))throw 0;clearBoard();APP.P=Object.assign(defaultData(),j.data);applyBg();APP.P.widgets.forEach(mountWidget);saveNow();buildDock();toast('Sicherung geladen');document.querySelector('.ov')?.remove()}catch(e){toast('Diese Datei ist keine gültige Tafelwerk-Sicherung.')}}},ic('upload'),'Sicherung laden');
   let used=0;try{for(let i=0;i<localStorage.length;i++){const k=localStorage.key(i);if(k.startsWith('tafelwerk'))used+=(localStorage.getItem(k)||'').length*2}}catch(e){}
-  return h('div',{style:{display:'grid',gap:'18px'}},h('div',{class:'prose'},
+  const disc=h('label',{class:'row disc-row'},h('input',{type:'checkbox',id:'disc-on',checked:discreet(),style:{width:'26px',height:'26px'},onchange:e=>{P.discreet=e.target.checked;save();afterClassChange();toast(e.target.checked?'Diskret-Modus an':'Diskret-Modus aus')}}),
+    h('span',null,h('b',null,'Diskret-Modus (empfohlen)'),h('br'),h('small',null,'Namen erscheinen nur, wenn man sie antippt: Gruppen sind verdeckt, das Glücksrad zeigt Nummern, ein gezogener Name verschwindet nach 12 Sekunden, in den Einstellungen sind Namen und Anwesenheit verhüllt.')));
+  return h('div',{style:{display:'grid',gap:'18px'}},disc,h('div',{class:'prose'},
     h('h3',null,'Wo sind die Daten?'),h('p',null,'Alles bleibt in diesem Browser auf diesem Gerät: Profile, Klassenlisten, Bilder und Einstellungen. Tafelwerk sendet nichts ins Internet und lädt keine Schriften oder Statistik-Skripte nach.'),
     h('h3',null,'Was geht doch nach aussen?'),h('ul',null,h('li',null,'Eingebettete Webseiten, YouTube-Videos und Links: Diese Anbieter sehen die Adresse des Geräts.'),h('li',null,'Mikrofon und Kamera werden nur live gemessen bzw. angezeigt. Es gibt keine Aufnahme und keine Speicherung.')),
     h('h3',null,'Empfehlungen'),h('ul',null,h('li',null,'Nur Vornamen oder Kürzel der Kinder eintragen.'),h('li',null,'Ein eigenes Windows-Konto oder eigenes Browserprofil auf dem Schul-PC verwenden.'),h('li',null,'Am Schuljahresende Klassen löschen.'),h('li',null,'Die Sicherungsdatei enthält die Klassenlisten: nicht per Mail verschicken, nur auf einem Schul-Speicher ablegen.')),
