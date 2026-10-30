@@ -436,6 +436,8 @@ button.gm-g{display:block;width:100%;text-align:left;font:inherit;color:inherit;
 .w.cfg-on{outline:4px solid var(--gold);outline-offset:6px}
 #mbar .mb-b.mb-set{background:#F3EFD9;color:#1D2421;font-weight:800}
 #mbar .mb-b.mb-set:hover{background:#fff}
+/* Laufender Timer: −/+ ausblenden (Platz bleibt, damit die Zahl nicht springt) */
+.w.run .tm-row>.ibtn{visibility:hidden;pointer-events:none}
 /* Bühne */
 #stage-handle{display:none}
 #app.stage{grid-template-rows:minmax(0,1fr) 0}
@@ -3282,7 +3284,7 @@ function noClassHint(I){return h('div',{class:'empty'},ic('users-round'),h('div'
 function eng(d){return{rem:()=>d.running?Math.max(0,d.endAt-Date.now()):d.rem,start(){if(d.rem<=0)d.rem=d.dur;d.endAt=Date.now()+d.rem;d.running=true},pause(){d.rem=Math.max(0,d.endAt-Date.now());d.running=false},reset(){d.running=false;d.rem=d.dur},set(ms){d.dur=ms;d.rem=ms;d.running=false}}}
 function timerCore(I,disp,play,onTick){const d=I.data,E=eng(d);
   if(d.running&&d.endAt<Date.now()-5000){d.running=false;d.rem=0}
-  function upd(){const r=E.rem();onTick(r,E);if(d.running&&r<=0){d.running=false;d.rem=0;save();I.alarm()}play.replaceChildren(ic(d.running?'pause':'play'),h('span',{class:'bl'},d.running?'Pause':'Start'));I.el.classList.toggle('low',d.running&&r<=10000&&r>0)}
+  function upd(){const r=E.rem();onTick(r,E);if(d.running&&r<=0){d.running=false;d.rem=0;save();I.alarm()}play.replaceChildren(ic(d.running?'pause':'play'),h('span',{class:'bl'},d.running?'Pause':'Start'));I.el.classList.toggle('low',d.running&&r<=10000&&r>0);I.el.classList.toggle('run',!!d.running)}
   play.addEventListener('click',()=>{ac();I.stopAlarm();d.running?E.pause():E.start();upd();save()});
   upd();const t=setInterval(upd,200);return{E,upd,stop:()=>clearInterval(t)}}
 def('timer',{label:'Timer',icon:'hourglass',cat:'zeit',w:400,h:320,minW:260,minH:240,
