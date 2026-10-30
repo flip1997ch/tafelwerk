@@ -416,12 +416,21 @@ button.gm-g{display:block;width:100%;text-align:left;font:inherit;color:inherit;
 .insp-body{flex:1;overflow:auto;overscroll-behavior:contain;padding:16px 20px 24px;display:grid;gap:22px;align-content:start}
 .insp-sec{display:grid;gap:14px;min-width:0}
 .insp-sec+.insp-sec{padding-top:18px;border-top:1px solid var(--line)}
-.insp-body .field>span{font-size:14px;font-weight:800;color:var(--accent)}
+.insp-body .field>span{font-size:15px;font-weight:700;color:var(--muted);text-transform:none;letter-spacing:0}
 .insp-sec>h3{margin:0;font-size:14px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--accent)}
 .insp-body .chip{min-height:48px;padding:0 16px;font-size:17px}
 .insp-body .btn{min-height:50px}
 .insp-body input[type=range]{height:32px;accent-color:var(--accent)}
-.insp-body input[type=checkbox]{width:26px!important;height:26px!important;accent-color:var(--accent)}
+.insp-body label.row:has(>input[type=checkbox]){display:flex;flex-direction:row-reverse;justify-content:space-between;align-items:center;gap:16px;min-height:52px;font-size:17px;cursor:pointer}
+.insp-body label.row>input[type=checkbox]{appearance:none;-webkit-appearance:none;flex:none;width:54px!important;height:32px!important;margin:0;border-radius:999px;background:var(--line);position:relative;cursor:pointer;transition:background .15s}
+.insp-body label.row>input[type=checkbox]::after{content:"";position:absolute;left:4px;top:4px;width:24px;height:24px;border-radius:50%;background:var(--card);box-shadow:0 1px 3px rgba(0,0,0,.25);transition:transform .18s}
+.insp-body label.row>input[type=checkbox]:checked{background:var(--accent)}
+.insp-body label.row>input[type=checkbox]:checked::after{transform:translateX(22px);background:var(--accent-ink)}
+.insp-body label.row>input[type=checkbox]:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+.insp-body .sw-row{flex-direction:row!important}
+.insp-body .sw-row>span{flex:1}
+.insp-sub{display:grid;gap:14px}
+.insp-sub[hidden]{display:none}
 .insp-body label.row{min-height:48px;font-size:17px}
 .insp-body .wcol-s{width:44px;height:44px}
 .w.cfg-on{outline:4px solid var(--gold);outline-offset:6px}
@@ -3093,10 +3102,17 @@ function playSound(id,vol,rep){vol=vol==null?80:vol;rep=rep==null?1:rep;const a=
   return()=>{stop=true;clearTimeout(tm);outs.forEach(o=>{try{o.gain.setValueAtTime(0,a.currentTime);o.disconnect()}catch(e){}});if(audio)audio.pause()}}
 let PREVIEW=null;function preview(id,vol){if(PREVIEW)PREVIEW();PREVIEW=playSound(id,vol==null?80:vol,1)}
 const field=(l,...c)=>h('div',{class:'field'},h('span',null,l),...c);
+/* Bausteine für die Einstellungs-Leiste */
+function sec(title,...c){return h('section',{class:'insp-sec'},h('h3',null,title),...c)}
+function sw(label,checked,on){const inp=h('input',{type:'checkbox',role:'switch',checked:!!checked,onchange:e=>on(e.target.checked)});return h('label',{class:'row sw-row'},h('span',null,label),inp)}
 function chipGroup(opts,cur,on){const wrap=h('div',{class:'chips',style:{justifyContent:'flex-start'}});wrap.append(...opts.map(([k,l])=>h('button',{class:'chip'+(cur===k?' on':''),onclick:e=>{on(k);[...wrap.children].forEach(b=>b.classList.toggle('on',b===e.currentTarget))}},l)));return wrap}
 function soundSelect(cur,on,allowDef){const s=h('select',{class:'inp'});if(allowDef!==false)s.append(h('option',{value:''},`Standard (${soundName(APP.P.defaultSound||'gong')})`));
   s.append(h('optgroup',{label:'Eingebaut'},Object.entries(SOUNDS).map(([k,v])=>h('option',{value:k},v.n))));if((APP.sounds||[]).length)s.append(h('optgroup',{label:'Eigene'},APP.sounds.map(x=>h('option',{value:x.id},x.name))));
   cur=cur?sndId(cur):cur;s.value=cur||'';if(s.value!==(cur||''))s.value=allowDef===false?'entdecker':'';s.addEventListener('change',()=>on(s.value));return s}
+function timerSettings(I,p,mins){const d=I.data;const cur=d.running?null:Math.round((d.rem>0?d.rem:d.dur)/60000);
+  const z=sec('Zeit',chipGroup(mins.map(m=>[m,m+' Min']),cur,v=>{if(d.running){toast('Der Timer läuft. Zuerst anhalten.');return}d.dur=d.rem=v*60000;I.stopAlarm()}));
+  if(d.running)z.append(h('div',{class:'hint'},'Läuft gerade. Zum Ändern zuerst «Pause».'));
+  const t=sec('Wenn die Zeit um ist');soundFields(I,t);p.append(z,t)}
 function soundFields(I,p,o){o=o||{};const key=o.key||'sound',d=I.data;if(d.vol==null)d.vol=80;
   const sel=soundSelect(d[key],v=>{d[key]=v;preview(v||APP.P.defaultSound||'gong',d.vol)},o.allowDef);
   p.append(field('Klingelton',h('div',{class:'row'},h('div',{style:{flex:'1',minWidth:'150px'}},sel),h('button',{class:'btn','aria-label':'Anhören',onclick:()=>preview(d[key]||APP.P.defaultSound||'gong',d.vol)},ic('play'),'Anhören'))),
@@ -3271,7 +3287,7 @@ function timerCore(I,disp,play,onTick){const d=I.data,E=eng(d);
   upd();const t=setInterval(upd,200);return{E,upd,stop:()=>clearInterval(t)}}
 def('timer',{label:'Timer',icon:'hourglass',cat:'zeit',w:400,h:320,minW:260,minH:240,
   init:()=>({dur:300000,rem:300000,running:false,endAt:0,sound:'',vol:80,rep:3}),
-  settings(I,p){soundFields(I,p)},
+  settings(I,p){timerSettings(I,p,[1,2,3,5,10,15,20,30,45])},
   mount(I){const d=I.data;const disp=h('div',{class:'tm-disp num'});const play=h('button',{class:'btn pri lg'});
     let C;const adj=m=>{if(d.running)return;C.E.set(clamp((d.rem>0?d.rem:d.dur)+m*60000,60000,5999000));I.stopAlarm();C.upd();save()};
     const reset=h('button',{class:'btn lg','aria-label':'Zurücksetzen',onclick:()=>{C.E.reset();I.stopAlarm();C.upd();save()}},ic('rotate-ccw'));
@@ -3280,7 +3296,7 @@ def('timer',{label:'Timer',icon:'hourglass',cat:'zeit',w:400,h:320,minW:260,minH
     C=timerCore(I,disp,play,r=>{disp.textContent=fmt(r)});return C.stop}});
 def('visualtimer',{label:'Visueller Timer',icon:'chart-pie',cat:'zeit',w:360,h:440,minW:240,minH:300,
   init:()=>({dur:600000,rem:600000,running:false,endAt:0,sound:'',vol:80,rep:3}),
-  settings(I,p){soundFields(I,p)},
+  settings(I,p){timerSettings(I,p,[1,2,5,10,15,20,30,45,60])},
   mount(I){const d=I.data;const dial=h('div',{class:'vt-dial'});const lbl=h('b',{class:'num'});dial.append(h('div',{class:'vt-lbl'},lbl));const play=h('button',{class:'btn pri lg'});let C;
     const presets=h('div',{class:'chips'},[1,2,5,10,15,20,30,45].map(m=>h('button',{class:'chip',onclick:()=>{C.E.set(m*60000);I.stopAlarm();C.upd();save()}},m+' Min')));
     const reset=h('button',{class:'btn lg','aria-label':'Zurücksetzen',onclick:()=>{C.E.reset();I.stopAlarm();C.upd();save()}},ic('rotate-ccw'));
@@ -3309,8 +3325,7 @@ def('stopwatch',{label:'Stoppuhr',icon:'timer',cat:'zeit',w:380,h:300,minW:260,m
     I.body.append(h('div',{class:'sw'},disp,laps,h('div',{class:'ctl'},play,lap,reset)));drawLaps();upd();const t=setInterval(upd,47);return()=>clearInterval(t)}});
 def('clock',{label:'Uhr',icon:'clock',cat:'zeit',w:300,h:300,minW:180,minH:180,
   init:()=>({mode:'analog',sec:true}),
-  settings(I,p){const d=I.data;p.append(h('div',{class:'field'},h('span',null,'Darstellung'),h('div',{class:'chips',style:{justifyContent:'flex-start'}},[['analog','Zeiger'],['digital','Digital']].map(([k,l])=>h('button',{class:'chip'+(d.mode===k?' on':''),onclick:e=>{d.mode=k;[...e.target.parentNode.children].forEach(b=>b.classList.toggle('on',b===e.target))}},l)))),
-    h('label',{class:'row'},h('input',{type:'checkbox',checked:d.sec,onchange:e=>d.sec=e.target.checked,style:{width:'22px',height:'22px'}}),'Sekunden anzeigen'))},
+  settings(I,p){const d=I.data;p.append(sec('Darstellung',chipGroup([['analog','Zeiger'],['digital','Digital']],d.mode,v=>d.mode=v),sw('Sekunden anzeigen',d.sec,v=>d.sec=v)))},
   mount(I){const d=I.data;let t;
     if(d.mode==='digital'){const a=h('span'),s=h('small');I.body.append(h('div',{class:'clk'},h('div',{class:'clk-dig num'},a,s)));const u=()=>{const n=new Date();a.textContent=`${pad2(n.getHours())}:${pad2(n.getMinutes())}`;s.textContent=d.sec?':'+pad2(n.getSeconds()):''};u();t=setInterval(u,500)}
     else{let s=`<svg viewBox="0 0 200 200" role="img" aria-label="Analoge Uhr"><circle class="face" cx="100" cy="100" r="96" fill="var(--card)" stroke="var(--ink)" stroke-width="4"/>`;
@@ -3364,11 +3379,13 @@ function decoLayer(S){const L=h('div',{class:'deco deco-'+S.deco.m,'aria-hidden'
     if(D.col)st.color=D.col;if(D.multi)st.color=pal[k%pal.length];if(D.m==='bob')st.setProperty('--x',((k+.5)/D.n*100).toFixed(1)+'%');L.append(sp)}return L}
 def('calendar',{label:'Kalender',icon:'calendar-days',cat:'zeit',init:()=>({season:true,off:[]}),
   settings(I,p){const d=I.data;if(d.season==null)d.season=true;if(!d.off)d.off=[];
-    p.append(h('label',{class:'row'},h('input',{type:'checkbox',checked:d.season,onchange:e=>d.season=e.target.checked,style:{width:'22px',height:'22px'}}),'Saisonale Designs vor besonderen Tagen'),
-      field('Vorschau (nur jetzt, wird nicht gespeichert)',chipGroup([['','Automatisch'],...Object.entries(SEASONS).map(([k,v])=>[k,v.icon+' '+v.n])],I.preview||'',v=>{I.preview=v||null})),
-      field('Diese Anlässe anzeigen',h('div',{class:'chips',style:{justifyContent:'flex-start'}},[['halloween','🎃 Halloween'],['samichlaus','🎅 Samichlaus'],['weihnachten','🎄 Advent/Weihnachten'],['neujahr','🎆 Neujahr'],['fasnacht','🎭 Fasnacht'],['ostern','🐰 Ostern'],['fruehling','🌷 Frühling'],['schulferien','☀️ Schulferien']].map(([k,l])=>h('button',{class:'chip'+(d.off.includes(k)?'':' on'),'aria-pressed':String(!d.off.includes(k)),onclick:e=>{d.off=d.off.includes(k)?d.off.filter(x=>x!==k):[...d.off,k];e.currentTarget.classList.toggle('on',!d.off.includes(k));e.currentTarget.setAttribute('aria-pressed',String(!d.off.includes(k)))}},l)))),
-      h('label',{class:'field'},h('span',null,'Schulferien eurer Schule (gilt fürs ganze Profil)'),h('textarea',{class:'inp num',rows:6,value:APP.P.holidays||'',placeholder:'Sportferien: 30.01.2027 - 14.02.2027\nFrühlingsferien: 03.04.2027 - 18.04.2027\nSommerferien: 03.07.2027 - 08.08.2027\nHerbstferien: 02.10.2027 - 17.10.2027',oninput:e=>APP.P.holidays=e.target.value,style:{minHeight:'140px'}})),
-      h('div',{class:'hint'},'Eine Zeile pro Ferien: Name, Doppelpunkt, erster und letzter Ferientag. Eine Woche vorher startet der Countdown. Das Design richtet sich nach dem Namen (Sommer, Herbst, Sport, Frühling).'))},
+    const ANL=[['halloween','Halloween'],['samichlaus','Samichlaus'],['weihnachten','Advent und Weihnachten'],['neujahr','Neujahr'],['fasnacht','Fasnacht'],['ostern','Ostern'],['fruehling','Frühling'],['schulferien','Schulferien']];
+    const more=h('div',{class:'insp-sub',hidden:!d.season},
+      field('Diese Anlässe anzeigen',h('div',{class:'chips',style:{justifyContent:'flex-start'}},ANL.map(([k,l])=>h('button',{class:'chip'+(d.off.includes(k)?'':' on'),'aria-pressed':String(!d.off.includes(k)),onclick:e=>{d.off=d.off.includes(k)?d.off.filter(x=>x!==k):[...d.off,k];e.currentTarget.classList.toggle('on',!d.off.includes(k));e.currentTarget.setAttribute('aria-pressed',String(!d.off.includes(k)))}},l)))),
+      field('Vorschau (nur jetzt, wird nicht gespeichert)',chipGroup([['','Automatisch'],...Object.entries(SEASONS).map(([k,v])=>[k,v.n])],I.preview||'',v=>{I.preview=v||null})));
+    p.append(sec('Saison-Designs',sw('Vor besonderen Tagen das Design ändern',d.season,v=>{d.season=v;more.hidden=!v}),more),
+      sec('Schulferien',h('label',{class:'field'},h('span',null,'Gilt für das ganze Profil'),h('textarea',{class:'inp num',rows:6,value:APP.P.holidays||'',placeholder:'Sportferien: 30.01.2027 - 14.02.2027\nFrühlingsferien: 03.04.2027 - 18.04.2027\nSommerferien: 03.07.2027 - 08.08.2027\nHerbstferien: 02.10.2027 - 17.10.2027',oninput:e=>APP.P.holidays=e.target.value,style:{minHeight:'140px'}})),
+        h('div',{class:'hint'},'Eine Zeile pro Ferien: Name, Doppelpunkt, erster und letzter Ferientag. Eine Woche vorher startet der Countdown.')))},
   mount(I){const d=I.data;if(d.season==null)d.season=true;
     const wd=h('div',{class:'wd'}),dn=h('div',{class:'dn num'}),my=h('div',{class:'my'}),kw=h('div',{class:'kw nah'}),rib=h('div',{class:'cal-rib',hidden:true}),icon=h('div',{class:'cal-ic','aria-hidden':'true',hidden:true});
     const box=h('div',{class:'cal'},h('div',{class:'cal-main'},wd,dn,my,kw),rib,icon);I.body.append(box);let cur='';
@@ -3405,12 +3422,12 @@ def('soundlevel',{label:'Lärmpegel',icon:'audio-lines',cat:'klasse',keepAlive:t
   settings(I,p){const d=I.data;const live=h('div',{class:'sl-mini'},h('i'),h('b'));const thrL=h('span',{class:'num'}),senL=h('span',{class:'num'});
     const upd=()=>{thrL.textContent=d.thr+' %';senL.textContent=d.sens<35?'tief':d.sens>65?'hoch':'mittel';live.style.setProperty('--t',d.thr+'%')};upd();
     let raf=0;const loop=()=>{if(!live.isConnected)return;const l=I.level?I.level():0;live.style.setProperty('--l',l.toFixed(1)+'%');live.querySelector('b').textContent=I.level&&I.running()?`Jetzt: ${Math.round(l)} %`:'Messung starten, um live einzustellen';raf=requestAnimationFrame(loop)};raf=requestAnimationFrame(loop);
-    p.append(live,
+    const warn=sec('Warnton');p.append(sec('Messung',live,
       field('Grenze für «zu laut»',h('div',{class:'row'},h('input',{type:'range',min:20,max:95,value:d.thr,style:{flex:1},oninput:e=>{d.thr=+e.target.value;upd();if(I.applied)I.applied()}}),thrL)),
       field('Empfindlichkeit des Mikrofons',h('div',{class:'row'},h('input',{type:'range',min:0,max:100,value:d.sens,style:{flex:1},oninput:e=>{d.sens=+e.target.value;upd()}}),senL)),
-      h('div',{class:'hint'},'Tipp: In einer ruhigen Arbeitsphase messen und die Empfindlichkeit so wählen, dass der Balken im grünen Bereich bleibt.'),
-      h('label',{class:'row'},h('input',{type:'checkbox',checked:d.beep,onchange:e=>d.beep=e.target.checked,style:{width:'22px',height:'22px'}}),'Warnton, wenn es zu laut ist'));
-    soundFields(I,p,{allowDef:false,rep:false})},
+      h('div',{class:'hint'},'Tipp: In einer ruhigen Arbeitsphase messen und die Empfindlichkeit so wählen, dass der Balken im grünen Bereich bleibt.')),warn);
+    const tone=h('div',{class:'insp-sub',hidden:!d.beep});soundFields(I,tone,{allowDef:false,rep:false});
+    warn.append(sw('Ton, wenn es zu laut ist',d.beep,v=>{d.beep=v;tone.hidden=!v}),tone)},
   mount(I){const d=I.data;let stream=null,ctx=null,raf=0,lvl=0,overSince=0,lastAlert=0,lastAbove=0;
     const fill=h('div',{class:'sl-fill'}),thr=h('div',{class:'sl-thr'});const meter=h('div',{class:'sl-wrap'},h('div',{class:'sl-meter'}),fill,thr);
     const face=document.createElementNS('http://www.w3.org/2000/svg','svg');face.setAttribute('viewBox','0 0 100 100');face.setAttribute('class','sl-face f-off');face.setAttribute('aria-hidden','true');
@@ -3456,12 +3473,10 @@ function confetti(host){if(REDUCED())return;const r=host.getBoundingClientRect()
 def('randomizer',{label:'Zufallsname',icon:'shuffle',cat:'klasse',
   init:()=>({src:'class',list:'',noRepeat:true,drawn:[],cur:'',anim:'slot',snd:true,vol:70}),
   settings(I,p){const d=I.data;if(!d.anim)d.anim='slot';if(d.snd==null)d.snd=true;
-    p.append(field('Animation',chipGroup([['slot','🎰 Slotmaschine'],['wheel','🎡 Glücksrad'],['quick','⚡ Schnell']],d.anim,v=>d.anim=v)),
-      field('Woher kommen die Namen?',chipGroup([['class','Aktive Klasse (anwesend)'],['list','Eigene Liste']],d.src,v=>d.src=v)),
-      h('label',{class:'field'},h('span',null,'Eigene Liste (eine Zeile pro Eintrag)'),h('textarea',{class:'inp',value:d.list,placeholder:'z. B. Themen, Aufgaben, Ämtli',oninput:e=>d.list=e.target.value})),
-      h('label',{class:'row'},h('input',{type:'checkbox',checked:d.noRepeat,onchange:e=>d.noRepeat=e.target.checked,style:{width:'22px',height:'22px'}}),'Jeden Namen nur einmal ziehen'),
-      h('label',{class:'row'},h('input',{type:'checkbox',checked:d.snd,onchange:e=>d.snd=e.target.checked,style:{width:'22px',height:'22px'}}),'Tick-Geräusch und Gewinner-Ton'),
-      h('label',{class:'row'},h('input',{type:'checkbox',checked:d.hero!==false,onchange:e=>d.hero=e.target.checked,style:{width:'22px',height:'22px'}}),'Gezogenen Namen danach gross zeigen'))},
+    const c=activeClass();const listF=h('label',{class:'field',hidden:d.src!=='list'},h('span',null,'Eine Zeile pro Eintrag'),h('textarea',{class:'inp',value:d.list,placeholder:'z. B. Themen, Aufgaben, Ämtli',oninput:e=>d.list=e.target.value}));
+    p.append(sec('Namen aus',chipGroup([['class',c?`Klasse ${c.name} (${presentNames().length} anwesend)`:'Aktive Klasse'],['list','Eigene Liste']],d.src,v=>{d.src=v;listF.hidden=v!=='list'}),listF),
+      sec('Animation',chipGroup([['slot','Slotmaschine'],['wheel','Glücksrad'],['quick','Schnell']],d.anim,v=>d.anim=v)),
+      sec('Ablauf',sw('Jeden Namen nur einmal ziehen',d.noRepeat,v=>d.noRepeat=v),sw('Gezogenen Namen danach gross zeigen',d.hero!==false,v=>d.hero=v),sw('Tick-Geräusch und Gewinner-Ton',d.snd,v=>d.snd=v)))},
   mount(I){const d=I.data;if(!d.anim)d.anim='slot';if(d.snd==null)d.snd=true;if(d.vol==null)d.vol=70;
     const names=()=>d.src==='class'?presentNames():d.list.split('\n').map(s=>s.trim()).filter(Boolean);
     if(d.src==='class'&&!activeClass()){I.body.append(noClassHint(I));return}
@@ -3605,11 +3620,11 @@ def('text',{label:'Text',icon:'type',cat:'inhalt',edit:true,
   init:()=>({html:'',bg:'white',fit:false,size:32,steps:false,v:2}),
   settings(I,p){const d=I.data;txMigrate(d);if(d.fit&&!d.fitKeep){d.fit=false}
     const szWrap=h('div',{class:'row',hidden:d.fit},h('input',{type:'range',min:14,max:140,value:d.size,style:{flex:1},oninput:e=>{d.size=+e.target.value;sl.textContent=d.size+' px'}}));const sl=h('span',{class:'num'},d.size+' px');szWrap.append(sl);
-    p.append(field('Hintergrund',chipGroup([['white','Weiss'],['note','Notizzettel'],['board','Wandtafel'],['clear','Durchsichtig']],d.bg,v=>d.bg=v)),
-      field('Textgrösse',chipGroup([[false,'Fest (bleibt beim Vergrössern gleich)'],[true,'Automatisch (wächst mit dem Widget)']],!!d.fit,v=>{d.fit=v;d.fitKeep=v;szWrap.hidden=v})),szWrap,
-      h('label',{class:'row'},h('input',{type:'checkbox',checked:!!d.steps,onchange:e=>d.steps=e.target.checked,style:{width:'22px',height:'22px'}}),'Listenpunkte schrittweise aufdecken (antippen = nächster Punkt)'),
-      field('Vorlage einsetzen (ersetzt den Text)',h('div',{class:'chips',style:{justifyContent:'flex-start'}},TX_TPL.filter(t=>t[0]!=='leer').map(([k,l,html,st])=>armed(h('button',{class:'chip'},l),'Ersetzen?',()=>{d.html=html;d.steps=st;I.rev=0;I._cfgDone()})))),
-      h('div',{class:'note'},'Doppeltipp oder Stift oben rechts: bearbeiten. In der Darstellung: Kästchen antippen zum Abhaken, schwarze Balken antippen zum Aufdecken.'))},
+    p.append(sec('Darstellung',field('Hintergrund',chipGroup([['white','Weiss'],['note','Notizzettel'],['board','Wandtafel'],['clear','Durchsichtig']],d.bg,v=>d.bg=v)),
+      field('Textgrösse',chipGroup([[false,'Fest'],[true,'Wächst mit dem Widget']],!!d.fit,v=>{d.fit=v;d.fitKeep=v;szWrap.hidden=v})),szWrap,
+      sw('Listenpunkte schrittweise aufdecken',!!d.steps,v=>d.steps=v)),
+      sec('Vorlage',field('Ersetzt den aktuellen Text',h('div',{class:'chips',style:{justifyContent:'flex-start'}},TX_TPL.filter(t=>t[0]!=='leer').map(([k,l,html,st])=>armed(h('button',{class:'chip'},l.replace(/[\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}\u{FE0F}]/gu,'').trim()),'Ersetzen?',()=>{d.html=html;d.steps=st;I.rev=0;I._cfgDone()})))),
+      h('div',{class:'note'},'Doppeltipp oder Stift oben rechts: bearbeiten. In der Darstellung: Kästchen antippen zum Abhaken, schwarze Balken antippen zum Aufdecken.')))},
   mount(I){const d=I.data;txMigrate(d);if(I.rev==null)I.rev=0;
     I.el.classList.toggle('w-clear',d.bg==='clear');
     const wrap=h('div',{class:'txw bg-'+(d.bg||'white')});I.body.append(wrap);
@@ -4108,9 +4123,8 @@ function openInspector(I){if(!APP.P||!I.el.isConnected)return;if(APP.insp&&APP.i
   let tm=0;const apply=()=>{clearTimeout(tm);tm=setTimeout(()=>{if(!I.cfgOpen)return;if(D.keepAlive){if(I.applied)I.applied()}else I.refresh();save()},180)};
   const done=()=>closeInspector();I._cfgDone=done;
   if(D.settings){D.settings(I,body,done)}
-  const sec=(t,...c)=>h('section',{class:'insp-sec'},h('h3',null,t),...c);
   if(!body.children.length)body.append(h('p',{class:'hint'},'Dieses Widget hat keine weiteren Einstellungen.'));
-  const main=h('section',{class:'insp-sec'},...body.children);body.replaceChildren(main,sec('Aussehen',colorField(I)));
+  const kids=[...body.children];const out=[];let loose=[];const flush=()=>{if(loose.length){out.push(h('section',{class:'insp-sec'},...loose));loose=[]}};kids.forEach(k=>{if(k.classList.contains('insp-sec')){flush();out.push(k)}else loose.push(k)});flush();body.replaceChildren(...out,sec('Aussehen',colorField(I)));
   ['input','change','click'].forEach(ev=>body.addEventListener(ev,e=>{if(e.target.closest('.wcol'))return;if(ev==='click'&&!e.target.closest('button'))return;apply()}));
   box.replaceChildren(
     h('header',{class:'insp-head'},h('span',{class:'insp-ic'},ic(D.icon)),h('div',{class:'insp-t'},h('b',null,D.label),h('small',null,'Änderungen gelten sofort')),
