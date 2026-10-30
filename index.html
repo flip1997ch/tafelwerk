@@ -401,6 +401,32 @@ button.gm-g{display:block;width:100%;text-align:left;font:inherit;color:inherit;
 .ph-add.on{background:var(--accent-soft);border-color:var(--accent)}
 .ph-add.on b{display:grid;place-items:center;width:22px;height:22px;border-radius:50%;background:var(--accent);color:var(--accent-ink);font-size:13px}
 .scr-card.in-ls{box-shadow:0 0 0 2px var(--accent)}
+/* Einstellungen-Seitenleiste */
+#insp{position:fixed;z-index:99975;display:flex;flex-direction:column;background:var(--card);color:var(--ink);border-radius:26px;box-shadow:0 1px 0 rgba(29,36,33,.06),0 30px 60px -20px rgba(29,36,33,.45),0 0 0 1px var(--line);overflow:hidden;opacity:0;transform:translateX(16px);transition:opacity .18s,transform .22s cubic-bezier(.2,1,.3,1)}
+#insp[data-side="l"]{transform:translateX(-16px)}
+#insp.on{opacity:1;transform:none}
+#insp[hidden]{display:none}
+.insp-head{display:flex;align-items:center;gap:12px;padding:14px 14px 12px 20px;border-bottom:1px solid var(--line);flex:none}
+.insp-ic{width:40px;height:40px;border-radius:12px;background:var(--accent-soft);color:var(--accent);display:grid;place-items:center;flex:none}
+.insp-t{flex:1;display:flex;flex-direction:column;min-width:0}
+.insp-t b{font-size:22px}
+.insp-t small{font-size:14px;color:var(--muted)}
+.insp-x{width:52px;height:52px;border:0;border-radius:14px;background:var(--card2);color:var(--ink);display:grid;place-items:center;cursor:pointer;flex:none}
+.insp-x .ic{width:24px;height:24px}
+.insp-body{flex:1;overflow:auto;overscroll-behavior:contain;padding:16px 20px 24px;display:grid;gap:22px;align-content:start}
+.insp-sec{display:grid;gap:14px;min-width:0}
+.insp-sec+.insp-sec{padding-top:18px;border-top:1px solid var(--line)}
+.insp-body .field>span{font-size:14px;font-weight:800;color:var(--accent)}
+.insp-sec>h3{margin:0;font-size:14px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--accent)}
+.insp-body .chip{min-height:48px;padding:0 16px;font-size:17px}
+.insp-body .btn{min-height:50px}
+.insp-body input[type=range]{height:32px;accent-color:var(--accent)}
+.insp-body input[type=checkbox]{width:26px!important;height:26px!important;accent-color:var(--accent)}
+.insp-body label.row{min-height:48px;font-size:17px}
+.insp-body .wcol-s{width:44px;height:44px}
+.w.cfg-on{outline:4px solid var(--gold);outline-offset:6px}
+#mbar .mb-b.mb-set{background:#F3EFD9;color:#1D2421;font-weight:800}
+#mbar .mb-b.mb-set:hover{background:#fff}
 /* Bühne */
 #stage-handle{display:none}
 #app.stage{grid-template-rows:minmax(0,1fr) 0}
@@ -668,6 +694,7 @@ button.gm-g{display:block;width:100%;text-align:left;font:inherit;color:inherit;
   <svg id="ambient" aria-hidden="true" preserveAspectRatio="none"><rect pathLength="1"/></svg>
   <div id="focus-dim" hidden></div>
   <div id="phase" role="navigation" aria-label="Lektion" hidden></div>
+  <aside id="insp" aria-label="Einstellungen" hidden></aside>
   <div id="mbar" role="toolbar" aria-label="Widget-Schnellaktionen" hidden></div>
   <div id="attn" hidden role="alertdialog" aria-live="assertive" aria-label="Aufmerksamkeit"><div class="at-in"><span class="at-ic"></span><p class="at-msg"></p><p class="at-hint">Antippen zum Beenden</p></div><div class="at-pick"></div></div>
   <button type="button" id="stage-attn" aria-label="Aufmerksamkeit" title="Aufmerksamkeit (Taste A)"></button>
@@ -3135,17 +3162,20 @@ function mountWidget(rec){const D=WIDGETS[rec.type];if(!D)return;const board=$('
     setTitle(t){el.setAttribute('aria-label',t)},
     alarm(){el.classList.add('ring');if(rec.type==='timer'||rec.type==='visualtimer')setTimeout(offerNextPhase,1200);if(I._snd)I._snd();const d=I.data;I._snd=playSound(d.sound||APP.P.defaultSound||'gong',d.vol,d.rep==null?3:d.rep);clearTimeout(I._rt2);I._rt2=setTimeout(()=>I.stopAlarm(),120000)},
     stopAlarm(){el.classList.remove('ring');clearTimeout(I._rt2);if(I._snd){I._snd();I._snd=null}},
-    refresh(){if(I.cleanup){try{I.cleanup()}catch(e){}}I.cleanup=null;body.replaceChildren();I.cfgOpen=false;I.setTitle(D.label);const r=D.mount(I);if(typeof r==='function')I.cleanup=r},
-    openCfg(){if(I.cfgOpen){I._cfgDone();return}if(APP.mbar===I)hideMbar();I.cfgOpen=true;const panel=h('div',{class:'cfg'});const done=()=>{if(D.keepAlive){panel.remove();I.cfgOpen=false;if(I.applied)I.applied()}else I.refresh();save()};I._cfgDone=done;if(D.settings)D.settings(I,panel,done);panel.append(colorField(I),h('div',{class:'foot'},h('button',{class:'btn pri',onclick:done},ic('check'),'Fertig')));body.append(panel);const f=panel.querySelector('input,textarea,select');if(f)f.focus()},
-    destroy(){clearTimeout(I._peek);if(APP.mbar===I)hideMbar();if(APP.focus===I)toggleFocus(I);I.stopAlarm();if(I.cleanup){try{I.cleanup()}catch(e){}}if(I.ro)I.ro.disconnect();el.remove();APP.inst.delete(rec.id)}};
+    refresh(){if(I.cleanup){try{I.cleanup()}catch(e){}}I.cleanup=null;body.replaceChildren();I.setTitle(D.label);const r=D.mount(I);if(typeof r==='function')I.cleanup=r},
+    openCfg(){if(I.cfgOpen){I._cfgDone();return}openInspector(I)},
+    destroy(){clearTimeout(I._peek);clearTimeout(I._lp);if(APP.insp===I)closeInspector();if(APP.mbar===I)hideMbar();if(APP.focus===I)toggleFocus(I);I.stopAlarm();if(I.cleanup){try{I.cleanup()}catch(e){}}if(I.ro)I.ro.disconnect();el.remove();APP.inst.delete(rec.id)}};
   if(D.edit){I.editBtn=h('button',{class:'ibtn','aria-label':'Bearbeiten',title:'Bearbeiten',onclick:()=>I.toggleEdit&&I.toggleEdit()},ic('pencil-line'));btns.push(I.editBtn)}
-  btns.push(h('button',{class:'ibtn','aria-label':'Einstellungen',title:'Einstellungen',onclick:()=>I.openCfg()},ic('settings')));
   btns.push(h('button',{class:'ibtn','aria-label':'Schliessen',title:'Schliessen',onclick:()=>{if(APP.focus===I)toggleFocus(I);else removeWidget(rec.id)}},ic('x')));
   const head=h('div',{class:'wh',title:'Zum Verschieben ziehen'},title,btns);
   const rz=h('div',{class:'rz','aria-hidden':'true'});
   const el=h('section',{class:'w','aria-label':D.label},head,body,rz);I.el=el;
   if(!D.edit&&rec.type!=='draw'){let lt=0,lx=0,ly=0;el.addEventListener('pointerup',e=>{if(e.target.closest('button,input,textarea,select,a,label,canvas,iframe,video,[contenteditable],.wh,.rz,.cfg')){lt=0;return}const t=e.timeStamp;if(t-lt<380&&Math.hypot(e.clientX-lx,e.clientY-ly)<30){lt=0;toggleFocus(I)}else{lt=t;lx=e.clientX;ly=e.clientY}})}
-  el.addEventListener('pointerup',e=>{if(e.target.closest('.cfg'))return;setTimeout(()=>showMbar(I),0)});
+  el.addEventListener('pointerup',e=>{clearTimeout(I._lp);if(I._lpDone){I._lpDone=false;return}setTimeout(()=>showMbar(I),0)});
+  /* Langer Druck aufs Widget öffnet die Einstellungen */
+  el.addEventListener('pointerdown',e=>{if(APP.P&&APP.P.stage)return;if(e.target.closest('button,input,textarea,select,a,canvas,iframe,video,[contenteditable],.rz'))return;const x0=e.clientX,y0=e.clientY;clearTimeout(I._lp);
+    const mv=ev=>{if(Math.hypot(ev.clientX-x0,ev.clientY-y0)>10){clearTimeout(I._lp);el.removeEventListener('pointermove',mv)}};el.addEventListener('pointermove',mv);
+    I._lp=setTimeout(()=>{el.removeEventListener('pointermove',mv);I._lpDone=true;hideMbar();openInspector(I)},650)});
   el.addEventListener('pointerdown',()=>{front(I);if(el.classList.contains('ring'))I.stopAlarm();if(APP.P&&APP.P.stage){el.classList.add('peek');clearTimeout(I._peek);I._peek=setTimeout(()=>{if(!I.cfgOpen&&!el.matches(':focus-within'))el.classList.remove('peek');else I._peek=setTimeout(()=>el.classList.remove('peek'),4000)},4000)}},true);
   place(I);applyWColor(I);board.append(el);APP.inst.set(rec.id,I);
   dragify(head,I,'move');dragify(rz,I,'size');
@@ -3865,7 +3895,7 @@ function afterClassChange(soft){buildDock();for(const I of APP.inst.values())if(
 const cloneJ=o=>JSON.parse(JSON.stringify(o));
 const wn=n=>n===1?'1 Widget':`${n} Widgets`;
 function boardState(){const B=$('#board').getBoundingClientRect();return{bg:cloneJ(APP.P.bg),widgets:cloneJ(APP.P.widgets),bw:Math.round(B.width),bh:Math.round(B.height)}}
-function applyState(st){clearBoard();APP.P.bg=cloneJ(st.bg);APP.P.widgets=cloneJ(st.widgets).map(w=>{if((w.type==='timer'||w.type==='visualtimer')&&w.data){w.data.running=false;w.data.rem=w.data.dur}return{...w,id:uid()}});applyBg();APP.P.widgets.forEach(mountWidget);save()}
+function applyState(st){closeInspector();clearBoard();APP.P.bg=cloneJ(st.bg);APP.P.widgets=cloneJ(st.widgets).map(w=>{if((w.type==='timer'||w.type==='visualtimer')&&w.data){w.data.running=false;w.data.rem=w.data.dur}return{...w,id:uid()}});applyBg();APP.P.widgets.forEach(mountWidget);save()}
 function bgCss(bg){return bg&&bg.kind==='image'&&bg.data?`background:#222 url("${bg.data}") center/cover no-repeat`:(BGS[bg&&bg.id]||BGS.papier).css}
 function bgLabel(bg){return bg&&bg.kind==='image'?'Eigenes Bild':(BGS[bg&&bg.id]||BGS.papier).n}
 function ago(ts){const d=new Date(ts),n=new Date(),hm=`${pad2(d.getHours())}:${pad2(d.getMinutes())}`;const dd=Math.round((day0(n)-day0(d))/864e5);return dd===0?`heute, ${hm}`:dd===1?`gestern, ${hm}`:d.toLocaleDateString('de-CH',{day:'numeric',month:'long',year:d.getFullYear()===n.getFullYear()?undefined:'numeric'})}
@@ -3985,7 +4015,7 @@ function enterApp(starter){APP.sounds=[];loadCustomSounds();setTimeout(renderPha
   requestAnimationFrame(()=>{if(starter){starterWidgets(APP.P);save()}APP.P.widgets=APP.P.widgets.filter(r=>WIDGETS[r.type]);APP.P.widgets.forEach(mountWidget)})}
 /* ---------- Bühne (während der Lektion) und Werkstatt (einrichten) ---------- */
 /* ---------- Fokus: Doppeltipp holt ein Widget gross nach vorne ---------- */
-function toggleFocus(I){hideMbar();const dim=$('#focus-dim');try{getSelection().removeAllRanges()}catch(e){}
+function toggleFocus(I){hideMbar();if(APP.insp)closeInspector();const dim=$('#focus-dim');try{getSelection().removeAllRanges()}catch(e){}
   if(APP.focus&&APP.focus!==I)toggleFocus(APP.focus);
   if(APP.focus===I){I.el.classList.remove('focus');APP.focus=null;dim.hidden=true;document.removeEventListener('keydown',focusKey);return}
   APP.focus=I;I.el.classList.add('focus');dim.hidden=false;document.addEventListener('keydown',focusKey)}
@@ -4033,7 +4063,7 @@ function showMbar(I){const bar=$('#mbar');if(!bar||!APP.P||APP.P.stage||APP.focu
   items.push(h('button',{type:'button',class:'mb-b mb-i','aria-label':'Farbe',title:'Farbe und Deckkraft',onclick:e=>{e.stopPropagation();toggleMbPop(I,e.currentTarget)}},sw));
   items.push(h('button',{type:'button',class:'mb-b mb-i','aria-label':'Gross zeigen',title:'Gross zeigen (Doppeltipp)',onclick:e=>{e.stopPropagation();toggleFocus(I)}},ic('maximize')));
   items.push(h('button',{type:'button',class:'mb-b mb-i','aria-label':'Duplizieren',title:'Duplizieren',onclick:e=>{e.stopPropagation();dupWidget(I)}},ic('copy')));
-  if(D.settings||true)items.push(h('button',{type:'button',class:'mb-b mb-i','aria-label':'Weitere Einstellungen',title:'Weitere Einstellungen',onclick:e=>{e.stopPropagation();hideMbar();I.openCfg()}},ic('ellipsis')));
+  items.push(h('button',{type:'button',class:'mb-b mb-set','aria-label':'Einstellungen',title:'Einstellungen (oder lange drücken)',onclick:e=>{e.stopPropagation();hideMbar();openInspector(I)}},ic('sliders-horizontal'),h('span',null,'Einstellen')));
   bar.replaceChildren(...items);bar.hidden=false;placeMbar();
   cancelAnimationFrame(APP.mbRaf);const loop=()=>{if(bar.hidden)return;placeMbar();APP.mbRaf=requestAnimationFrame(loop)};APP.mbRaf=requestAnimationFrame(loop)}
 function placeMbar(){const bar=$('#mbar'),I=APP.mbar;if(!bar||bar.hidden||!I)return;if(!I.el.isConnected||I.cfgOpen||APP.focus||(APP.P&&APP.P.stage)){hideMbar();return}
@@ -4055,7 +4085,7 @@ document.addEventListener('keydown',e=>{if(e.key==='Escape'&&APP.mbar&&!document
 /* ---------- Lektion: gespeicherte Bildschirme als Phasen ---------- */
 function lesson(){const P=APP.P;if(!P.lesson)P.lesson={ids:[],i:0,on:false};const L=P.lesson;L.ids=L.ids.filter(id=>P.screens.some(s=>s.id===id));if(L.i>=L.ids.length)L.i=Math.max(0,L.ids.length-1);if(!L.ids.length)L.on=false;return L}
 const phaseScreen=k=>{const L=lesson();return APP.P.screens.find(s=>s.id===L.ids[k])};
-function goPhase(k){const L=lesson();if(!L.ids.length)return;k=clamp(k,0,L.ids.length-1);const sc=phaseScreen(k);if(!sc)return;hideMbar();if(APP.focus)toggleFocus(APP.focus);L.i=k;L.on=true;applyState(sc);sc.used=Date.now();save();renderPhase()}
+function goPhase(k){closeInspector();const L=lesson();if(!L.ids.length)return;k=clamp(k,0,L.ids.length-1);const sc=phaseScreen(k);if(!sc)return;hideMbar();if(APP.focus)toggleFocus(APP.focus);L.i=k;L.on=true;applyState(sc);sc.used=Date.now();save();renderPhase()}
 function startLesson(){const L=lesson();if(!L.ids.length){toast('Zuerst Bildschirme zur Lektion hinzufügen.');return}document.querySelector('.ov')?.remove();goPhase(0);toast('Lektion gestartet: Weiter mit ▶ oder der Taste «Bild ab».',4200)}
 function endLesson(){const L=lesson();L.on=false;save();renderPhase();toast('Lektion beendet')}
 function renderPhase(){const el=$('#phase');if(!el||!APP.P)return;const L=lesson();if(!L.on){el.hidden=true;el.replaceChildren();return}
@@ -4071,10 +4101,35 @@ function renderPhase(){const el=$('#phase');if(!el||!APP.P)return;const L=lesson
 function offerNextPhase(){const L=lesson();if(!L.on||L.i>=L.ids.length-1)return;const nx=phaseScreen(L.i+1);if(!nx)return;toastAct(`Zeit um. Weiter zu «${nx.name}»?`,'Weiter',()=>goPhase(L.i+1),15000,'chevron-right')}
 document.addEventListener('keydown',e=>{if(!APP.P||$('#app').hidden||document.querySelector('.ov'))return;const L=APP.P.lesson;if(!L||!L.on)return;if(e.target.closest('input,textarea,select,[contenteditable]'))return;
   if(e.key==='PageDown'){e.preventDefault();goPhase(L.i+1)}else if(e.key==='PageUp'){e.preventDefault();goPhase(L.i-1)}});
-function setStage(on){if(!APP.P)return;hideMbar();APP.P.stage=!!on;save();const app=$('#app');app.classList.toggle('stage',!!on);document.querySelector('.pick-ov')?.remove();
+/* ---------- Einstellungen als Seitenleiste ---------- */
+function openInspector(I){if(!APP.P||!I.el.isConnected)return;if(APP.insp&&APP.insp!==I)closeInspector();if(APP.focus)toggleFocus(APP.focus);hideMbar();
+  const D=I.D,box=$('#insp');APP.insp=I;I.cfgOpen=true;I.el.classList.add('cfg-on');
+  const body=h('div',{class:'insp-body cfg-live'});
+  let tm=0;const apply=()=>{clearTimeout(tm);tm=setTimeout(()=>{if(!I.cfgOpen)return;if(D.keepAlive){if(I.applied)I.applied()}else I.refresh();save()},180)};
+  const done=()=>closeInspector();I._cfgDone=done;
+  if(D.settings){D.settings(I,body,done)}
+  const sec=(t,...c)=>h('section',{class:'insp-sec'},h('h3',null,t),...c);
+  if(!body.children.length)body.append(h('p',{class:'hint'},'Dieses Widget hat keine weiteren Einstellungen.'));
+  const main=h('section',{class:'insp-sec'},...body.children);body.replaceChildren(main,sec('Aussehen',colorField(I)));
+  ['input','change','click'].forEach(ev=>body.addEventListener(ev,e=>{if(e.target.closest('.wcol'))return;if(ev==='click'&&!e.target.closest('button'))return;apply()}));
+  box.replaceChildren(
+    h('header',{class:'insp-head'},h('span',{class:'insp-ic'},ic(D.icon)),h('div',{class:'insp-t'},h('b',null,D.label),h('small',null,'Änderungen gelten sofort')),
+      h('button',{type:'button',class:'insp-x','aria-label':'Einstellungen schliessen',title:'Schliessen (Esc)',onclick:closeInspector},ic('x'))),body);
+  box.hidden=false;placeInspector();requestAnimationFrame(()=>box.classList.add('on'));}
+function placeInspector(){const box=$('#insp'),I=APP.insp;if(!box||box.hidden||!I)return;const B=$('#board').getBoundingClientRect(),r=I.el.getBoundingClientRect();
+  const w=Math.min(430,Math.max(320,B.width*.34));const top=Math.round(Math.min(B.height*.26,B.height-520));const t=Math.max(12,top);
+  const overR=Math.max(0,r.right-(B.right-w-24)),overL=Math.max(0,(B.left+w+24)-r.left);
+  const side=(r.left+r.width/2-B.left)<B.width/2?(overR<=overL?'r':'l'):(overL<=overR?'l':'r');
+  box.style.width=w+'px';box.style.top=(B.top+t)+'px';box.style.bottom=(innerHeight-B.bottom+12)+'px';box.style.left=side==='l'?(B.left+12)+'px':'';box.style.right=side==='r'?(innerWidth-B.right+12)+'px':'';box.dataset.side=side}
+function closeInspector(){const box=$('#insp'),I=APP.insp;if(!box)return;APP.insp=null;box.classList.remove('on');box.hidden=true;box.replaceChildren();
+  if(I){I.cfgOpen=false;I.el.classList.remove('cfg-on');if(I.D.keepAlive){if(I.applied)I.applied()}else if(I.el.isConnected)I.refresh();save()}}
+document.addEventListener('keydown',e=>{if(e.key==='Escape'&&APP.insp&&!document.querySelector('.ov,.tx-pop')){e.preventDefault();closeInspector()}});
+document.addEventListener('pointerdown',e=>{if(!APP.insp)return;if(e.target.closest('#insp,#toast,.ov,.mb-pop,#mbar'))return;if(APP.insp.el.contains(e.target))return;closeInspector()},true);
+addEventListener('resize',()=>placeInspector());
+function setStage(on){if(!APP.P)return;closeInspector();hideMbar();APP.P.stage=!!on;save();const app=$('#app');app.classList.toggle('stage',!!on);document.querySelector('.pick-ov')?.remove();
   if(on){for(const I of APP.inst.values())I.el.classList.remove('peek');toast('Bühne: Widget antippen zeigt seine Knöpfe. «Werkzeuge» unten führt zurück.',4200)}}
 document.addEventListener('click',e=>{if(e.target.closest('#stage-handle'))setStage(false)});
-function lockApp(){const ph=$('#phase');if(ph)ph.hidden=true;hideMbar();document.documentElement.removeAttribute('data-theme');endAttention();$('#app').classList.remove('stage');saveNow();document.querySelector('.ov')?.remove();clearBoard();APP.P=null;APP.pid=null;APP.guest=false;showGate()}
+function lockApp(){closeInspector();const ph=$('#phase');if(ph)ph.hidden=true;hideMbar();document.documentElement.removeAttribute('data-theme');endAttention();$('#app').classList.remove('stage');saveNow();document.querySelector('.ov')?.remove();clearBoard();APP.P=null;APP.pid=null;APP.guest=false;showGate()}
 
 /* Start */
 try{qrcode.stringToBytes=qrcode.stringToBytesFuncs['UTF-8']}catch(e){}
